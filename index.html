@@ -1,0 +1,2604 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>تقرير نهاية الدوام - إدارة المسبح</title>
+  <style>
+    :root {
+      --bg: #f7f9fb;
+      --panel: #ffffff;
+      --text: #172033;
+      --muted: #66758a;
+      --line: #d9e2ec;
+      --brand: #2f7c86;
+      --brand-dark: #256773;
+      --good: #2f7d61;
+      --warn: #9a6b22;
+      --bad: #ad3f3a;
+      --soft: #eef7f8;
+      --shadow: 0 12px 30px rgba(31, 45, 61, 0.07);
+      font-family: Tahoma, Arial, sans-serif;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button { cursor: pointer; }
+
+    .page {
+      width: min(1120px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 24px 0 40px;
+    }
+
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mark {
+      width: 46px;
+      height: 46px;
+      border-radius: 8px;
+      background: var(--brand);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 8px 22px rgba(47, 124, 134, 0.18);
+      flex: 0 0 auto;
+    }
+
+    .mark svg {
+      width: 26px;
+      height: 26px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(23px, 3vw, 34px);
+      line-height: 1.25;
+    }
+
+    .subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: end;
+    }
+
+    .btn {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+      color: var(--text);
+      padding: 0 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 700;
+      white-space: nowrap;
+      transition: 0.16s ease;
+    }
+
+    .btn:hover {
+      border-color: #b7c6d5;
+      transform: translateY(-1px);
+      background: #ffffff;
+    }
+
+    .btn.primary {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+    }
+
+    .btn.primary:hover {
+      background: var(--brand-dark);
+    }
+
+    .btn.danger {
+      color: var(--bad);
+      border-color: #ead4d2;
+      background: #fffafa;
+    }
+
+    .btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .notice {
+      display: none;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      border-right: 6px solid var(--brand);
+      background: #fff;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+      line-height: 1.7;
+      font-weight: 700;
+    }
+
+    .notice.show { display: block; }
+    .notice.good { border-right-color: var(--good); }
+    .notice.warn { border-right-color: var(--warn); }
+    .notice.bad { border-right-color: var(--bad); }
+
+    .action-status {
+      display: none;
+      flex: 1 1 100%;
+      width: 100%;
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(180, 35, 24, 0.28);
+      border-right: 6px solid var(--bad);
+      background: #fff7f6;
+      color: var(--bad);
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.7;
+    }
+
+    .action-status.show {
+      display: block;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(330px, 1fr) minmax(330px, 0.86fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      padding: 15px 16px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 19px;
+      line-height: 1.35;
+    }
+
+    .panel-head p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .panel-body {
+      padding: 16px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .field.full { grid-column: 1 / -1; }
+
+    label,
+    .label {
+      color: #304253;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      min-height: 43px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+      padding: 9px 11px;
+      outline: none;
+      transition: 0.16s ease;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 4px rgba(47, 124, 134, 0.13);
+    }
+
+    input[readonly] {
+      background: #f1f5f8;
+      color: #415162;
+    }
+
+    input[type="number"],
+    input[inputmode="numeric"],
+    input[inputmode="decimal"] {
+      direction: ltr;
+      text-align: center;
+      unicode-bidi: plaintext;
+      font-variant-numeric: tabular-nums;
+    }
+
+    textarea {
+      min-height: 94px;
+      resize: vertical;
+      line-height: 1.8;
+    }
+
+    .section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      margin-top: 14px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .section-title {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #fafcfe;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .section-title h3 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .price {
+      color: var(--brand);
+      font-weight: 800;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .section-body {
+      padding: 14px;
+    }
+
+    .section.disabled {
+      opacity: 0.58;
+    }
+
+    .section.disabled .section-body {
+      display: none;
+      background: #f6f8fa;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fcfeff;
+      padding: 12px;
+      min-height: 88px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 9px;
+      line-height: 1.5;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: clamp(22px, 3vw, 32px);
+      line-height: 1;
+    }
+
+    .match {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #fbfdff;
+      font-weight: 800;
+    }
+
+    .match.good { color: var(--good); }
+    .match.bad { color: var(--bad); }
+
+    .report-box {
+      min-height: 440px;
+      font-size: 16px;
+      background: #fffef8;
+      border-color: #d7e8dd;
+      line-height: 2;
+      white-space: pre-wrap;
+    }
+
+    .settings {
+      display: none;
+      margin-bottom: 18px;
+    }
+
+    .settings.show {
+      display: block;
+    }
+
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(245, 247, 250, 0.96);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+
+    .login-overlay.show {
+      display: flex;
+    }
+
+    .login-card {
+      width: min(440px, 100%);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .login-card h2 {
+      margin: 0 0 6px;
+      font-size: 22px;
+    }
+
+    .login-card p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .switch-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #304253;
+      white-space: nowrap;
+    }
+
+    .switch-row input {
+      width: 18px;
+      height: 18px;
+      min-height: 18px;
+      accent-color: var(--brand);
+    }
+
+    .names-list {
+      display: grid;
+      gap: 7px;
+      margin-top: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+      color: #304253;
+      line-height: 1.8;
+    }
+
+    .names-list:empty {
+      display: none;
+    }
+
+    .name-row {
+      display: block;
+      padding: 5px 8px;
+      border-radius: 7px;
+      background: #eef7f9;
+      font-weight: 800;
+    }
+
+    .select-cell {
+      width: 58px;
+      text-align: center;
+    }
+
+    .select-cell input {
+      width: 18px;
+      height: 18px;
+      min-height: 18px;
+      accent-color: var(--brand);
+    }
+
+    .records {
+      margin-top: 18px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+      background: #fff;
+    }
+
+    th,
+    td {
+      padding: 11px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: right;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    th {
+      background: #f7fafc;
+      color: #314253;
+      font-weight: 800;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .empty {
+      padding: 18px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    @media (max-width: 920px) {
+      .top,
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .top {
+        display: grid;
+        align-items: stretch;
+      }
+
+      .actions {
+        justify-content: stretch;
+      }
+
+      .actions .btn,
+      .actions .field {
+        flex: 1 1 150px;
+      }
+
+      .summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 620px) {
+      .page {
+        width: min(100% - 18px, 1120px);
+        padding-top: 14px;
+      }
+
+      .form-grid,
+      .summary {
+        grid-template-columns: 1fr;
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .actions .btn,
+      .actions .field,
+      .switch-row {
+        width: 100%;
+      }
+
+      .section-title {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-overlay" id="loginOverlay">
+    <section class="login-card">
+      <h2>تسجيل الدخول</h2>
+      <p>أدخل اسم المستخدم وكلمة المرور التي تحددها الإدارة.</p>
+      <div class="form-grid">
+        <div class="field full">
+          <label for="loginUsername">اسم المستخدم</label>
+          <input id="loginUsername" type="text" autocomplete="username">
+        </div>
+        <div class="field full">
+          <label for="loginPassword">كلمة المرور</label>
+          <input id="loginPassword" type="password" autocomplete="current-password">
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <button class="btn primary" id="loginBtn" type="button">دخول</button>
+      </div>
+    </section>
+  </div>
+
+  <main class="page">
+    <header class="top">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M4 16c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2"></path>
+            <path d="M4 20c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2"></path>
+            <path d="M7 10V4h6a3 3 0 0 1 0 6H7Z"></path>
+          </svg>
+        </div>
+        <div>
+          <h1>تقرير نهاية الدوام</h1>
+          <p class="subtitle">نموذج بسيط للمدرب: أدخل الأعداد، انسخ التقرير، واحفظه في السجل.</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="settingsBtn" type="button">
+          <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V22h-4v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 0 1 4.2 18l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3v-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1A2 2 0 0 1 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V3h4v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 0 1 19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1v4H21a1.7 1.7 0 0 0-1.6 1Z"></path></svg>
+          الإدارة
+        </button>
+        <button class="btn" id="copyBtn" type="button">
+          <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          نسخ التقرير
+        </button>
+        <button class="btn primary" id="saveBtn" type="button">
+          <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path></svg>
+          حفظ اليوم
+        </button>
+        <div class="action-status" id="editActionStatus" role="status"></div>
+      </div>
+    </header>
+
+    <div class="notice" id="notice" role="status"></div>
+
+    <section class="panel settings" id="settingsPanel">
+      <div class="panel-head">
+        <div>
+          <h2>لوحة الإدارة</h2>
+          <p>تتحكم الإدارة بالأسعار، بيانات الدخول، وربط Google Sheets.</p>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="form-grid">
+          <div class="field">
+            <label for="visitorPrice">سعر الزائر</label>
+            <input id="visitorPrice" type="number" min="0" step="1" value="15">
+          </div>
+          <div class="field">
+            <label for="academyPrice">عرض أبناء الأكاديمية</label>
+            <input id="academyPrice" type="number" min="0" step="1" value="50">
+          </div>
+          <div class="field">
+            <label for="subscriberPrice">اشتراك الزوار</label>
+            <input id="subscriberPrice" type="number" min="0" step="1" value="150">
+          </div>
+          <div class="field">
+            <label for="coachName">اسم المدرب</label>
+            <input id="coachName" type="text" value="رجب">
+          </div>
+          <div class="field full">
+            <label for="scriptUrl">رابط Google Apps Script</label>
+            <input id="scriptUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+          </div>
+          <div class="field">
+            <label for="coachUsername">اسم مستخدم المدرب</label>
+            <input id="coachUsername" type="text" autocomplete="username">
+          </div>
+          <div class="field">
+            <label for="coachPassword">كلمة مرور المدرب</label>
+            <input id="coachPassword" type="password" autocomplete="new-password">
+          </div>
+          <div class="field">
+            <label for="adminUsername">اسم مستخدم الإدارة</label>
+            <input id="adminUsername" type="text" autocomplete="username">
+          </div>
+          <div class="field">
+            <label for="adminPassword">كلمة مرور الإدارة</label>
+            <input id="adminPassword" type="password" autocomplete="new-password">
+          </div>
+          <label class="switch-row">
+            <input id="requireLogin" type="checkbox" checked>
+            تفعيل تسجيل الدخول
+          </label>
+        </div>
+        <div style="margin-top:14px">
+          <button class="btn primary" id="saveSettingsBtn" type="button">حفظ إعدادات الإدارة</button>
+        </div>
+
+        <div class="section" style="margin-top:16px">
+          <div class="section-title">
+            <h3>طلبات تعديل المدرب</h3>
+            <span class="price" id="pendingCount">0 طلب</span>
+          </div>
+          <div class="section-body">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>التاريخ</th>
+                    <th>وقت الطلب</th>
+                    <th>الزوار الكلي</th>
+                    <th>الكاش</th>
+                    <th>التحويل</th>
+                    <th>الإجراء</th>
+                  </tr>
+                </thead>
+                <tbody id="pendingEditsBody">
+                  <tr><td class="empty" colspan="6">لا توجد طلبات تعديل</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="section" style="margin-top:16px">
+          <div class="section-title">
+            <h3>طلبات حذف البيانات</h3>
+            <span class="price" id="pendingDeleteCount">0 طلب</span>
+          </div>
+          <div class="section-body">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>الأيام المطلوبة</th>
+                    <th>وقت الطلب</th>
+                    <th>عدد السجلات</th>
+                    <th>الإجراء</th>
+                  </tr>
+                </thead>
+                <tbody id="pendingDeletesBody">
+                  <tr><td class="empty" colspan="4">لا توجد طلبات حذف</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="layout">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>بيانات اليوم</h2>
+            <p>املأ الأرقام كما تصل عادة في رسالة المدرب. النظام يطابق الإجمالي تلقائيًا.</p>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="form-grid">
+            <div class="field">
+              <label for="gregorianDate">التاريخ الميلادي</label>
+              <input id="gregorianDate" type="date">
+            </div>
+            <div class="field">
+              <label for="hijriDate">تاريخ التقرير بالهجري</label>
+              <input id="hijriDate" type="text" inputmode="numeric" placeholder="27-11-1447">
+            </div>
+            <div class="field">
+              <label for="dayName">اليوم</label>
+              <input id="dayName" type="text" readonly>
+            </div>
+            <div class="field">
+              <label for="totalVisitors">عدد الزوار الكلي</label>
+              <input id="totalVisitors" type="number" min="0" step="1" value="0">
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">
+              <h3>بالنسبة للزوار</h3>
+              <span class="price">سعر الزائر: <span id="visitorPriceLabel">15</span> ريال</span>
+            </div>
+            <div class="section-body">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="visitorsCash">عدد الذين دفعوا كاش</label>
+                  <input id="visitorsCash" type="number" min="0" step="1" value="0">
+                </div>
+                <div class="field">
+                  <label for="visitorsBank">عدد الذين قاموا بتحويل المبلغ</label>
+                  <input id="visitorsBank" type="number" min="0" step="1" value="0">
+                </div>
+                <div class="field">
+                  <label for="visitorsSplitCount">عدد الذين دفعوا نص المبلغ والباقي تحويل</label>
+                  <input id="visitorsSplitCount" type="number" min="0" step="1" value="0">
+                </div>
+                <div class="field">
+                  <label for="visitorsSplitCash">المبلغ المدفوع كاش منهم</label>
+                  <input id="visitorsSplitCash" type="number" min="0" step="0.01" value="0">
+                </div>
+                <div class="field full">
+                  <label for="visitorsSplitBank">المبلغ المحول تلقائيًا</label>
+                  <input id="visitorsSplitBank" type="text" readonly value="0">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section" id="academySection">
+            <div class="section-title">
+              <h3>المشتركين من أبناء الأكاديمية</h3>
+              <label class="switch-row">
+                <input id="academyEnabled" type="checkbox">
+                تفعيل
+              </label>
+              <span class="price">عرض <span id="academyPriceLabel">50</span> ريال</span>
+            </div>
+            <div class="section-body">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="academyCash">عدد الذين دفعوا كاش</label>
+                  <input id="academyCash" data-academy-field type="number" min="0" step="1" value="0">
+                </div>
+                <div class="field">
+                  <label for="academyBank">عدد الذين قاموا بتحويل المبلغ</label>
+                  <input id="academyBank" data-academy-field type="number" min="0" step="1" value="0">
+                </div>
+                <div class="field">
+                  <label for="academySplitCount">عدد الذين دفعوا نص المبلغ والباقي تحويل</label>
+                  <input id="academySplitCount" data-academy-field type="number" min="0" step="1" value="0">
+                </div>
+                <div class="field">
+                  <label for="academySplitCash">المبلغ المدفوع كاش منهم</label>
+                  <input id="academySplitCash" data-academy-field type="number" min="0" step="0.01" value="0">
+                </div>
+                <div class="field full">
+                  <label for="academySplitBank">المبلغ المحول تلقائيًا</label>
+                  <input id="academySplitBank" data-academy-field type="text" readonly value="0">
+                </div>
+                <div class="field full">
+                  <label for="academyNames">أسماء أبناء الأكاديمية</label>
+                  <textarea id="academyNames" data-academy-field placeholder="اكتب الأسماء وافصل بينها بفاصلة أو شرطة"></textarea>
+                  <div id="academyNamesList" class="names-list" data-academy-field></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section" id="subscriberSection">
+            <div class="section-title">
+              <h3>المشتركين الزوار</h3>
+              <label class="switch-row">
+                <input id="subscriberEnabled" type="checkbox">
+                تفعيل
+              </label>
+              <span class="price">يدفعون <span id="subscriberPriceLabel">150</span> ريال</span>
+            </div>
+            <div class="section-body">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="subscriberCash">عدد الذين دفعوا كاش</label>
+                  <input id="subscriberCash" data-subscriber-field type="number" min="0" step="1" value="0">
+                </div>
+                <div class="field">
+                  <label for="subscriberBank">عدد الذين قاموا بتحويل المبلغ</label>
+                  <input id="subscriberBank" data-subscriber-field type="number" min="0" step="1" value="0">
+                </div>
+                <div class="field">
+                  <label for="subscriberSplitCount">عدد الذين دفعوا نص المبلغ والباقي تحويل</label>
+                  <input id="subscriberSplitCount" data-subscriber-field type="number" min="0" step="1" value="0">
+                </div>
+                <div class="field">
+                  <label for="subscriberSplitCash">المبلغ المدفوع كاش منهم</label>
+                  <input id="subscriberSplitCash" data-subscriber-field type="number" min="0" step="0.01" value="0">
+                </div>
+                <div class="field full">
+                  <label for="subscriberSplitBank">المبلغ المحول تلقائيًا</label>
+                  <input id="subscriberSplitBank" data-subscriber-field type="text" readonly value="0">
+                </div>
+                <div class="field full">
+                  <label for="subscriberNames">أسماء المشتركين الزوار</label>
+                  <textarea id="subscriberNames" data-subscriber-field placeholder="اكتب الأسماء وافصل بينها بفاصلة أو شرطة"></textarea>
+                  <div id="subscriberNamesList" class="names-list" data-subscriber-field></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="field full" style="margin-top:14px">
+            <label for="notes">ملاحظة</label>
+            <textarea id="notes" placeholder="مثال: شخص دفع جزء كاش والباقي تحويل، أو أي ملاحظة مهمة"></textarea>
+          </div>
+
+          <div class="summary">
+            <div class="metric">
+              <span>مجموع المدخل</span>
+              <strong id="enteredTotal">0</strong>
+            </div>
+            <div class="metric">
+              <span>مبلغ الكاش</span>
+              <strong id="cashAmount">0</strong>
+            </div>
+            <div class="metric">
+              <span>مبلغ التحويل</span>
+              <strong id="bankAmount">0</strong>
+            </div>
+            <div class="metric">
+              <span>إجمالي المبالغ</span>
+              <strong id="grandAmount">0</strong>
+            </div>
+          </div>
+
+          <div class="match" id="matchBox">
+            <span>مطابقة عدد الزوار</span>
+            <span id="matchText">0 / 0</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>التقرير الجاهز للإرسال</h2>
+            <p>هذا النص هو الذي ينسخه المدرب ويرسله لكم بنهاية الدوام.</p>
+          </div>
+        </div>
+        <div class="panel-body">
+          <textarea id="reportText" class="report-box" readonly></textarea>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel records">
+      <div class="panel-head">
+        <div>
+          <h2>سجل الأيام المحفوظة</h2>
+          <p id="recordCount">0 سجل</p>
+        </div>
+        <div class="actions">
+          <label class="switch-row" style="min-height:42px">
+            <input id="exportAllTime" type="checkbox" checked>
+            جميع الأوقات
+          </label>
+          <div class="field" style="min-width:150px">
+            <label for="exportStartDate">من</label>
+            <input id="exportStartDate" type="date" disabled>
+          </div>
+          <div class="field" style="min-width:150px">
+            <label for="exportEndDate">إلى</label>
+            <input id="exportEndDate" type="date" disabled>
+          </div>
+          <button class="btn" id="exportBtn" type="button">تصدير Excel</button>
+          <button class="btn danger" id="deleteSelectedBtn" type="button">طلب حذف المحدد</button>
+          <div class="action-status" id="recordsActionStatus" role="status"></div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="select-cell">اختيار</th>
+                <th>التاريخ</th>
+                <th>الهجري</th>
+                <th>المدرب</th>
+                <th>الزوار الكلي</th>
+                <th>الزوار</th>
+                <th>أبناء الأكاديمية</th>
+                <th>مشتركين الزوار</th>
+                <th>الكاش</th>
+                <th>التحويل</th>
+                <th>الإجراء</th>
+              </tr>
+            </thead>
+            <tbody id="recordsBody">
+              <tr><td class="empty" colspan="11">لا توجد بيانات محفوظة حتى الآن</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEYS = {
+      settings: "simple_pool_settings_v1",
+      records: "simple_pool_records_v1",
+      pendingEdits: "simple_pool_pending_edits_v1",
+      pendingDeletes: "simple_pool_pending_deletes_v1"
+    };
+
+    const arabicDays = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+    const ids = [
+      "settingsPanel", "settingsBtn", "saveSettingsBtn", "saveBtn", "copyBtn", "exportBtn", "deleteSelectedBtn",
+      "editActionStatus", "recordsActionStatus",
+      "loginOverlay", "loginUsername", "loginPassword", "loginBtn",
+      "exportAllTime", "exportStartDate", "exportEndDate",
+      "visitorPrice", "academyPrice", "subscriberPrice", "coachName", "scriptUrl",
+      "coachUsername", "coachPassword", "adminUsername", "adminPassword", "requireLogin",
+      "visitorPriceLabel", "academyPriceLabel", "subscriberPriceLabel",
+      "gregorianDate", "hijriDate", "dayName", "totalVisitors",
+      "visitorsCash", "visitorsBank", "visitorsSplitCount", "visitorsSplitCash", "visitorsSplitBank",
+      "academyEnabled", "academySection",
+      "academyCash", "academyBank", "academySplitCount", "academySplitCash", "academySplitBank", "academyNames", "academyNamesList",
+      "subscriberEnabled", "subscriberSection",
+      "subscriberCash", "subscriberBank", "subscriberSplitCount", "subscriberSplitCash", "subscriberSplitBank", "subscriberNames", "subscriberNamesList",
+      "notes", "enteredTotal", "cashAmount", "bankAmount", "grandAmount", "matchBox", "matchText",
+      "reportText", "recordsBody", "recordCount", "pendingEditsBody", "pendingCount", "pendingDeletesBody", "pendingDeleteCount", "notice"
+    ];
+    const el = {};
+    ids.forEach((id) => el[id] = document.getElementById(id));
+
+    let settings = loadSettings();
+    let records = loadRecords();
+    let pendingEdits = loadPendingEdits();
+    let pendingDeletes = loadPendingDeletes();
+    let editingDate = null;
+    let isLoadingRecord = false;
+
+    function todayISO() {
+      const now = new Date();
+      const offset = now.getTimezoneOffset();
+      return new Date(now.getTime() - offset * 60000).toISOString().slice(0, 10);
+    }
+
+    function loadSettings() {
+      const fallback = {
+        visitorPrice: 15,
+        academyPrice: 50,
+        subscriberPrice: 150,
+        coachName: "رجب",
+        scriptUrl: "https://script.google.com/macros/s/AKfycbwDS_Tyfac4ToBJ8bHxST0MBpSMrxc3KHISv2ifNNRkgr9qi3JISB11VvddmMENKk_YTw/exec",
+        coachUsername: "coach",
+        coachPassword: "1234",
+        adminUsername: "admin",
+        adminPassword: "1234",
+        requireLogin: true
+      };
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.settings) || "{}");
+        return {
+          ...fallback,
+          ...saved,
+          coachUsername: saved.coachUsername || fallback.coachUsername,
+          coachPassword: saved.coachPassword || fallback.coachPassword,
+          adminUsername: saved.adminUsername || fallback.adminUsername,
+          adminPassword: saved.adminPassword || fallback.adminPassword,
+          requireLogin: typeof saved.requireLogin === "boolean" ? saved.requireLogin : fallback.requireLogin
+        };
+      } catch {
+        return fallback;
+      }
+    }
+
+    function loadRecords() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.records) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function loadPendingEdits() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.pendingEdits) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function loadPendingDeletes() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.pendingDeletes) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function saveSettingsToStorage() {
+      localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(settings));
+    }
+
+    function saveRecordsToStorage() {
+      localStorage.setItem(STORAGE_KEYS.records, JSON.stringify(records));
+    }
+
+    function savePendingEditsToStorage() {
+      localStorage.setItem(STORAGE_KEYS.pendingEdits, JSON.stringify(pendingEdits));
+    }
+
+    function savePendingDeletesToStorage() {
+      localStorage.setItem(STORAGE_KEYS.pendingDeletes, JSON.stringify(pendingDeletes));
+    }
+
+    function applySettings() {
+      el.visitorPrice.value = settings.visitorPrice;
+      el.academyPrice.value = settings.academyPrice;
+      el.subscriberPrice.value = settings.subscriberPrice;
+      el.coachName.value = settings.coachName;
+      el.scriptUrl.value = settings.scriptUrl;
+      el.coachUsername.value = settings.coachUsername || "coach";
+      el.coachPassword.value = settings.coachPassword || "1234";
+      el.adminUsername.value = settings.adminUsername;
+      el.adminPassword.value = settings.adminPassword;
+      el.requireLogin.checked = settings.requireLogin;
+      updatePriceLabels();
+    }
+
+    function saveSettings() {
+      if (!isAdminLoggedIn()) {
+        openAdminLogin();
+        showNotice("يلزم دخول الإدارة لحفظ الإعدادات.", "warn");
+        return;
+      }
+
+      const scriptUrl = el.scriptUrl.value.trim();
+      const scriptUrlIssue = validateAppsScriptUrl(scriptUrl);
+      if (scriptUrlIssue) {
+        showNotice(scriptUrlIssue, "bad");
+        el.scriptUrl.focus();
+        return;
+      }
+
+      settings = {
+        visitorPrice: numberValue(el.visitorPrice.value),
+        academyPrice: numberValue(el.academyPrice.value),
+        subscriberPrice: numberValue(el.subscriberPrice.value),
+        coachName: el.coachName.value.trim() || "رجب",
+        scriptUrl,
+        coachUsername: el.coachUsername.value.trim() || "coach",
+        coachPassword: el.coachPassword.value || "1234",
+        adminUsername: el.adminUsername.value.trim() || "admin",
+        adminPassword: el.adminPassword.value || "1234",
+        requireLogin: el.requireLogin.checked
+      };
+      saveSettingsToStorage();
+      updatePriceLabels();
+      recalc();
+      showNotice("تم حفظ الإعدادات.", "good");
+    }
+
+    function validateAppsScriptUrl(url) {
+      if (!url) return "";
+      let parsed;
+      try {
+        parsed = new URL(url);
+      } catch {
+        return "رابط Google Apps Script غير صحيح. انسخ رابط Web App الذي ينتهي بـ /exec.";
+      }
+
+      if (parsed.hostname.includes("script.googleusercontent.com")) {
+        return "هذا رابط مؤقت من Google ولا يصلح للنظام. المطلوب رابط Web App من Apps Script ويكون شكله: https://script.google.com/macros/s/.../exec";
+      }
+
+      if (parsed.hostname !== "script.google.com" || !parsed.pathname.includes("/macros/s/") || !parsed.pathname.endsWith("/exec")) {
+        return "استخدم رابط Web App الصحيح من Apps Script، ويجب أن يبدأ بـ https://script.google.com/macros/s/ وينتهي بـ /exec";
+      }
+
+      return "";
+    }
+
+    function isLoggedIn() {
+      return sessionStorage.getItem("pool_user_role") === "coach" || sessionStorage.getItem("pool_user_role") === "admin";
+    }
+
+    function isAdminLoggedIn() {
+      return sessionStorage.getItem("pool_user_role") === "admin";
+    }
+
+    function credentialsMatch(username, password, savedUsername, savedPassword) {
+      const cleanUsername = String(username || "").trim();
+      const cleanPassword = String(password || "").trim();
+      return cleanUsername === String(savedUsername || "").trim() && cleanPassword === String(savedPassword || "").trim();
+    }
+
+    function applyLoginGate() {
+      if (settings.requireLogin && !isLoggedIn()) {
+        el.loginOverlay.classList.add("show");
+      } else {
+        el.loginOverlay.classList.remove("show");
+      }
+    }
+
+    function login() {
+      const username = el.loginUsername.value.trim();
+      const password = el.loginPassword.value;
+      if (credentialsMatch(username, password, settings.adminUsername, settings.adminPassword, "admin", "1234")) {
+        sessionStorage.setItem("pool_user_role", "admin");
+        el.loginOverlay.classList.remove("show");
+        el.settingsPanel.classList.add("show");
+        el.loginUsername.value = "";
+        el.loginPassword.value = "";
+        showNotice("تم دخول الإدارة.", "good");
+        return;
+      }
+      if (credentialsMatch(username, password, settings.coachUsername, settings.coachPassword, "coach", "1234")) {
+        sessionStorage.setItem("pool_user_role", "coach");
+        el.loginOverlay.classList.remove("show");
+        el.settingsPanel.classList.remove("show");
+        el.loginUsername.value = "";
+        el.loginPassword.value = "";
+        showNotice("تم تسجيل الدخول.", "good");
+        return;
+      }
+      showNotice("اسم المستخدم أو كلمة المرور غير صحيحة.", "bad");
+    }
+
+    function openAdminLogin() {
+      el.loginOverlay.classList.add("show");
+      el.loginUsername.focus();
+      showNotice("أدخل بيانات الإدارة لفتح لوحة الإدارة.", "warn");
+    }
+
+    function openAdminPanel() {
+      if (!isAdminLoggedIn()) {
+        openAdminLogin();
+        return;
+      }
+      el.settingsPanel.classList.toggle("show");
+    }
+
+    function updatePriceLabels() {
+      el.visitorPriceLabel.textContent = money(settings.visitorPrice);
+      el.academyPriceLabel.textContent = money(settings.academyPrice);
+      el.subscriberPriceLabel.textContent = money(settings.subscriberPrice);
+    }
+
+    function normalizeNumberText(value) {
+      return String(value || "")
+        .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
+        .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+        .replace(/٫/g, ".")
+        .replace(/,/g, "")
+        .trim();
+    }
+
+    function numberValue(value) {
+      const parsed = Number(normalizeNumberText(value));
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    }
+
+    function countValue(value) {
+      return Math.max(0, Math.floor(numberValue(value)));
+    }
+
+    function money(value) {
+      const rounded = Math.round((Number(value) || 0) * 100) / 100;
+      return rounded.toLocaleString("ar-SA", {
+        minimumFractionDigits: rounded % 1 ? 2 : 0,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function numText(value) {
+      return Number(value || 0).toLocaleString("ar-SA");
+    }
+
+    function monthKey(dateText) {
+      return String(dateText || "").slice(0, 7);
+    }
+
+    function hijriFromGregorian(dateText) {
+      if (!dateText) return "";
+      const date = new Date(dateText + "T12:00:00");
+      const parts = new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).formatToParts(date);
+      const pick = (type) => parts.find((part) => part.type === type)?.value || "";
+      return `${pick("day")}-${pick("month")}-${pick("year")}`;
+    }
+
+    function updateDateFields() {
+      const dateText = el.gregorianDate.value || todayISO();
+      const date = new Date(dateText + "T12:00:00");
+      el.dayName.value = arabicDays[date.getDay()];
+      el.hijriDate.value = hijriFromGregorian(dateText);
+    }
+
+    function resetDailyInputs() {
+      editingDate = null;
+      [
+        "totalVisitors",
+        "visitorsCash", "visitorsBank", "visitorsSplitCount", "visitorsSplitCash",
+        "academyCash", "academyBank", "academySplitCount", "academySplitCash",
+        "subscriberCash", "subscriberBank", "subscriberSplitCount", "subscriberSplitCash"
+      ].forEach((id) => {
+        el[id].value = "0";
+      });
+      el.academyNames.value = "";
+      el.subscriberNames.value = "";
+      el.academyEnabled.checked = false;
+      el.subscriberEnabled.checked = false;
+      updateOptionalSections();
+      updateNameLists();
+      el.notes.value = "";
+    }
+
+    function setGroupValues(prefix, group) {
+      el[`${prefix}Cash`].value = group?.cash || 0;
+      el[`${prefix}Bank`].value = group?.bank || 0;
+      el[`${prefix}SplitCount`].value = group?.splitCount || 0;
+      el[`${prefix}SplitCash`].value = group?.splitCash || 0;
+    }
+
+    function loadRecordForEdit(date) {
+      const record = records.find((item) => item.gregorianDate === date);
+      if (!record) {
+        showNotice("لم يتم العثور على هذا اليوم.", "bad");
+        return;
+      }
+
+      isLoadingRecord = true;
+      editingDate = record.gregorianDate;
+      el.gregorianDate.value = record.gregorianDate;
+      el.hijriDate.value = record.hijriDate || "";
+      el.dayName.value = record.dayName || "";
+      el.totalVisitors.value = record.totalVisitors || 0;
+      setGroupValues("visitors", record.visitors || {});
+      el.academyEnabled.checked = !!(record.academy?.enabled || categoryTotal(record.academy || {}) > 0);
+      el.subscriberEnabled.checked = !!(record.subscribers?.enabled || categoryTotal(record.subscribers || {}) > 0);
+      updateOptionalSections();
+      setGroupValues("academy", record.academy || {});
+      setGroupValues("subscriber", record.subscribers || {});
+      el.academyNames.value = namesText(record.academy);
+      el.subscriberNames.value = namesText(record.subscribers);
+      el.notes.value = record.notes || "";
+      isLoadingRecord = false;
+      recalc();
+      showActionStatus(el.editActionStatus, "تم تحميل بيانات اليوم للتعديل. بعد الحفظ سيرسل الطلب للإدارة للاعتماد.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function updateOptionalSection(section, selector, enabled) {
+      section.classList.toggle("disabled", !enabled);
+      document.querySelectorAll(selector).forEach((input) => {
+        input.disabled = !enabled;
+        if (!enabled && "value" in input) {
+          input.value = input.tagName === "TEXTAREA" ? "" : "0";
+        }
+      });
+    }
+
+    function updateOptionalSections() {
+      updateOptionalSection(el.academySection, "[data-academy-field]", el.academyEnabled.checked);
+      updateOptionalSection(el.subscriberSection, "[data-subscriber-field]", el.subscriberEnabled.checked);
+      updateNameLists();
+    }
+
+    function parseNames(value) {
+      return String(value || "")
+        .split(/[\n,،\-–—]+/)
+        .map((name) => name.trim())
+        .filter(Boolean);
+    }
+
+    function namesText(group) {
+      if (!group) return "";
+      if (Array.isArray(group.names) && group.names.length) return group.names.join("\n");
+      return group.namesText || "";
+    }
+
+    function renderNamesList(textarea, list, enabled) {
+      if (!enabled) {
+        list.innerHTML = "";
+        return;
+      }
+      const names = parseNames(textarea.value);
+      list.innerHTML = names.map((name) => `<span class="name-row">${escapeHtml(name)}</span>`).join("");
+    }
+
+    function updateNameLists() {
+      if (!el.academyNamesList || !el.subscriberNamesList) return;
+      renderNamesList(el.academyNames, el.academyNamesList, el.academyEnabled.checked);
+      renderNamesList(el.subscriberNames, el.subscriberNamesList, el.subscriberEnabled.checked);
+    }
+
+    function paymentGroup(cashId, bankId, splitCountId, splitCashId, price) {
+      const splitCount = countValue(el[splitCountId].value);
+      const splitCashInput = numberValue(el[splitCashId].value);
+      const splitTotal = splitCount * price;
+      const splitCash = Math.min(splitCashInput, splitTotal);
+      const splitBank = Math.max(0, splitTotal - splitCash);
+
+      return {
+        cash: countValue(el[cashId].value),
+        bank: countValue(el[bankId].value),
+        splitCount,
+        splitCash,
+        splitCashInput,
+        splitBank,
+        splitTotal,
+        price
+      };
+    }
+
+    function buildRecord() {
+      const visitors = paymentGroup("visitorsCash", "visitorsBank", "visitorsSplitCount", "visitorsSplitCash", settings.visitorPrice);
+      const academy = el.academyEnabled.checked
+        ? paymentGroup("academyCash", "academyBank", "academySplitCount", "academySplitCash", settings.academyPrice)
+        : { cash: 0, bank: 0, splitCount: 0, splitCash: 0, splitCashInput: 0, splitBank: 0, splitTotal: 0, price: settings.academyPrice, enabled: false };
+      const subscribers = el.subscriberEnabled.checked
+        ? paymentGroup("subscriberCash", "subscriberBank", "subscriberSplitCount", "subscriberSplitCash", settings.subscriberPrice)
+        : { cash: 0, bank: 0, splitCount: 0, splitCash: 0, splitCashInput: 0, splitBank: 0, splitTotal: 0, price: settings.subscriberPrice, enabled: false };
+      academy.enabled = el.academyEnabled.checked;
+      subscribers.enabled = el.subscriberEnabled.checked;
+      academy.namesText = academy.enabled ? el.academyNames.value.trim() : "";
+      academy.names = academy.enabled ? parseNames(el.academyNames.value) : [];
+      subscribers.namesText = subscribers.enabled ? el.subscriberNames.value.trim() : "";
+      subscribers.names = subscribers.enabled ? parseNames(el.subscriberNames.value) : [];
+      const totalVisitors = countValue(el.totalVisitors.value);
+      const enteredTotal =
+        visitors.cash + visitors.bank + visitors.splitCount +
+        academy.cash + academy.bank + academy.splitCount +
+        subscribers.cash + subscribers.bank + subscribers.splitCount;
+      const cashAmount =
+        visitors.cash * visitors.price + visitors.splitCash +
+        academy.cash * academy.price + academy.splitCash +
+        subscribers.cash * subscribers.price + subscribers.splitCash;
+      const bankAmount =
+        visitors.bank * visitors.price + visitors.splitBank +
+        academy.bank * academy.price + academy.splitBank +
+        subscribers.bank * subscribers.price + subscribers.splitBank;
+      const gregorianDate = el.gregorianDate.value || todayISO();
+
+      const record = {
+        id: Date.now().toString(36),
+        createdAt: new Date().toISOString(),
+        gregorianDate,
+        hijriDate: el.hijriDate.value.trim(),
+        dayName: el.dayName.value,
+        month: monthKey(gregorianDate),
+        coachName: settings.coachName,
+        totalVisitors,
+        enteredTotal,
+        isMatched: totalVisitors === enteredTotal,
+        visitors,
+        academy,
+        subscribers,
+        cashAmount,
+        bankAmount,
+        grandAmount: cashAmount + bankAmount,
+        notes: el.notes.value.trim()
+      };
+      record.reportText = buildReport(record);
+      return record;
+    }
+
+    function buildReport(record) {
+      const note = record.notes || "لا توجد ملاحظات";
+      const lines = [
+        `المطلوب من ${record.coachName} إعطائنا تقرير بنهاية الدوام`,
+        `تاريخ اليوم :${record.hijriDate}`,
+        `عدد الزوار الكلي خلال هذا اليوم : ${numText(record.totalVisitors)}`,
+        "بالنسبة للزوار",
+        `عدد الذين دفعوا كاش : ${numText(record.visitors.cash)}`,
+        `عدد الذين قاموا بتحويل المبلغ كامل : ${numText(record.visitors.bank)}`,
+        `عدد الذين دفعوا نص المبلغ والمبلغ الثاني تحويل : ${numText(record.visitors.splitCount)}`,
+        splitDetails(record.visitors)
+      ];
+
+      if (record.academy.enabled) {
+        lines.push(
+          `بالنسبة للمشتركين من أبناء الأكاديمية عرض (${money(record.academy.price)} ريال )`,
+        `عدد الذين دفعوا كاش : ${numText(record.academy.cash)}`,
+        `عدد الذين قاموا بتحويل المبلغ كامل: ${numText(record.academy.bank)}`,
+        `عدد الذين دفعوا نص المبلغ والمبلغ الثاني تحويل : ${numText(record.academy.splitCount)}`,
+          splitDetails(record.academy)
+        );
+        appendNames(lines, "أسماء أبناء الأكاديمية", record.academy.names);
+      }
+
+      if (record.subscribers.enabled) {
+        lines.push(
+          `بالنسبة للمشتركين الزوار (يدفعون ${money(record.subscribers.price)} ريال)`,
+        `عدد الذين دفعوا كاش : ${numText(record.subscribers.cash)}`,
+        `عدد الذين قاموا بتحويل المبلغ: ${numText(record.subscribers.bank)}`,
+        `عدد الذين دفعوا نص المبلغ والمبلغ الثاني تحويل : ${numText(record.subscribers.splitCount)}`,
+          splitDetails(record.subscribers)
+        );
+        appendNames(lines, "أسماء المشتركين الزوار", record.subscribers.names);
+      }
+
+      lines.push(`*ملاحظه ${note}`);
+      return lines.filter(Boolean).join("\n");
+    }
+
+    function splitDetails(group) {
+      if (!group.splitCount) return "";
+      return `تفصيل الدفع النصي: كاش ${money(group.splitCash)} ريال، تحويل ${money(group.splitBank)} ريال`;
+    }
+
+    function appendNames(lines, title, names) {
+      if (!Array.isArray(names) || !names.length) return;
+      lines.push(title);
+      names.forEach((name) => lines.push(`- ${name}`));
+    }
+
+    function recalc() {
+      const record = buildRecord();
+      updateOptionalSections();
+      el.visitorsSplitBank.value = money(record.visitors.splitBank);
+      el.academySplitBank.value = money(record.academy.splitBank);
+      el.subscriberSplitBank.value = money(record.subscribers.splitBank);
+      el.enteredTotal.textContent = numText(record.enteredTotal);
+      el.cashAmount.textContent = money(record.cashAmount);
+      el.bankAmount.textContent = money(record.bankAmount);
+      el.grandAmount.textContent = money(record.grandAmount);
+      el.matchText.textContent = `${numText(record.enteredTotal)} / ${numText(record.totalVisitors)}`;
+      el.matchBox.classList.toggle("good", record.isMatched);
+      el.matchBox.classList.toggle("bad", !record.isMatched);
+      el.reportText.value = record.reportText;
+    }
+
+    function validateRecord(record) {
+      const issues = [];
+      if (!record.hijriDate) issues.push("أدخل تاريخ التقرير بالهجري.");
+      [
+        ["الزوار", record.visitors],
+        ["أبناء الأكاديمية", record.academy],
+        ["المشتركين الزوار", record.subscribers]
+      ].forEach(([label, group]) => {
+        if (group.splitCount === 0 && group.splitCashInput > 0) {
+          issues.push(`في ${label}: أدخل عدد الذين دفعوا نص المبلغ قبل إدخال مبلغ الكاش.`);
+        }
+        if (group.splitCashInput > group.splitTotal) {
+          issues.push(`في ${label}: مبلغ الكاش للدفع النصي أكبر من المبلغ المطلوب.`);
+        }
+      });
+      if (!record.isMatched) {
+        issues.push(`عدد الزوار الكلي (${numText(record.totalVisitors)}) لا يطابق مجموع الفقرات (${numText(record.enteredTotal)}).`);
+      }
+      return issues;
+    }
+
+    function showNotice(message, type = "") {
+      el.notice.textContent = message;
+      el.notice.className = `notice show ${type}`;
+      window.clearTimeout(showNotice.timer);
+      showNotice.timer = window.setTimeout(() => {
+        el.notice.className = "notice";
+      }, 5200);
+    }
+
+    function showActionStatus(target, message) {
+      if (!target) return;
+      target.textContent = message;
+      target.classList.add("show");
+    }
+
+    function clearActionStatus(target) {
+      if (!target) return;
+      target.textContent = "";
+      target.classList.remove("show");
+    }
+
+    async function copyReport() {
+      const text = el.reportText.value;
+      try {
+        await navigator.clipboard.writeText(text);
+        showNotice("تم نسخ التقرير.", "good");
+      } catch {
+        el.reportText.focus();
+        el.reportText.select();
+        document.execCommand("copy");
+        showNotice("تم تحديد التقرير للنسخ.", "good");
+      }
+    }
+
+    async function sendToSheet(record) {
+      if (!settings.scriptUrl) return "local-only";
+      const scriptUrlIssue = validateAppsScriptUrl(settings.scriptUrl);
+      if (scriptUrlIssue) throw new Error(scriptUrlIssue);
+      await fetch(settings.scriptUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "appendDailyRecord",
+          month: record.month,
+          record
+        })
+      });
+      return "sent";
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    function jsonpSheetAction(action, payload = {}) {
+      if (!settings.scriptUrl) return Promise.resolve({ ok: false, message: "missing-url" });
+      const scriptUrlIssue = validateAppsScriptUrl(settings.scriptUrl);
+      if (scriptUrlIssue) return Promise.reject(new Error(scriptUrlIssue));
+
+      return new Promise((resolve, reject) => {
+        const callbackName = `poolSheetCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        const script = document.createElement("script");
+        const timer = window.setTimeout(() => {
+          cleanup();
+          reject(new Error("انتهت مهلة الاتصال مع Google Apps Script."));
+        }, 18000);
+
+        function cleanup() {
+          window.clearTimeout(timer);
+          delete window[callbackName];
+          script.remove();
+        }
+
+        window[callbackName] = (response) => {
+          cleanup();
+          resolve(response || { ok: false, message: "empty-response" });
+        };
+
+        const params = new URLSearchParams({
+          action,
+          callback: callbackName
+        });
+        Object.entries(payload).forEach(([key, value]) => {
+          params.set(key, typeof value === "string" ? value : JSON.stringify(value));
+        });
+
+        const separator = settings.scriptUrl.includes("?") ? "&" : "?";
+        script.src = `${settings.scriptUrl}${separator}${params.toString()}`;
+        script.onerror = () => {
+          cleanup();
+          reject(new Error("تعذر الوصول إلى Google Apps Script."));
+        };
+        document.body.appendChild(script);
+      });
+    }
+
+    async function postSheetAction(action, payload = {}) {
+      if (!settings.scriptUrl) return "local-only";
+      await fetch(settings.scriptUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action, ...payload })
+      });
+      return { ok: true, assumed: true };
+    }
+
+    async function sendDeleteToSheet(dates) {
+      if (!settings.scriptUrl) return "local-only";
+      try {
+        const result = await jsonpSheetAction("deleteDailyRecords", { dates });
+        if (!result.ok) throw new Error(result.message || "delete-failed");
+        return result;
+      } catch (error) {
+        await postSheetAction("deleteDailyRecords", { dates });
+        return { ok: true, assumed: true, deleted: 0 };
+      }
+    }
+
+    function normalizeSheetGroup(group, fallbackPrice) {
+      const source = group || {};
+      const names = Array.isArray(source.names) ? source.names : parseNames(source.namesText || "");
+      return {
+        cash: Number(source.cash || 0),
+        bank: Number(source.bank || 0),
+        splitCount: Number(source.splitCount || 0),
+        splitCash: Number(source.splitCash || 0),
+        splitCashInput: Number(source.splitCashInput || source.splitCash || 0),
+        splitBank: Number(source.splitBank || 0),
+        splitTotal: Number(source.splitTotal || 0),
+        price: Number(source.price || fallbackPrice || 0),
+        enabled: Boolean(source.enabled || source.cash || source.bank || source.splitCount || names.length),
+        namesText: source.namesText || names.join("\n"),
+        names
+      };
+    }
+
+    function normalizeSheetRecord(record) {
+      if (!record || !record.gregorianDate) return null;
+      const visitors = normalizeSheetGroup(record.visitors, settings.visitorPrice);
+      const academy = normalizeSheetGroup(record.academy, settings.academyPrice);
+      const subscribers = normalizeSheetGroup(record.subscribers, settings.subscriberPrice);
+      const normalized = {
+        ...record,
+        id: record.id || record.gregorianDate,
+        month: record.month || monthKey(record.gregorianDate),
+        totalVisitors: Number(record.totalVisitors || 0),
+        enteredTotal: Number(record.enteredTotal || record.enteredVisitors || 0),
+        visitors,
+        academy,
+        subscribers,
+        cashAmount: Number(record.cashAmount || 0),
+        bankAmount: Number(record.bankAmount || 0),
+        grandAmount: Number(record.grandAmount || record.grandTotal || 0),
+        notes: record.notes || ""
+      };
+      normalized.isMatched = normalized.totalVisitors === normalized.enteredTotal;
+      normalized.reportText = normalized.reportText || buildReport(normalized);
+      return normalized;
+    }
+
+    async function loadRecordsFromSheet() {
+      if (!settings.scriptUrl || validateAppsScriptUrl(settings.scriptUrl)) return;
+      try {
+        const result = await jsonpSheetAction("getRecords");
+        if (!result.ok || !Array.isArray(result.records)) return;
+        records = result.records
+          .map(normalizeSheetRecord)
+          .filter(Boolean)
+          .sort((a, b) => a.gregorianDate.localeCompare(b.gregorianDate));
+        saveRecordsToStorage();
+        renderRecords();
+        recalc();
+      } catch (error) {
+        console.warn("Unable to load records from Google Sheets", error);
+      }
+    }
+
+    async function refreshDashboardAfterSave() {
+      if (!settings.scriptUrl || validateAppsScriptUrl(settings.scriptUrl)) return;
+      try {
+        await wait(1500);
+        await jsonpSheetAction("refreshDashboard");
+      } catch (error) {
+        console.warn("Unable to refresh Google Sheets dashboard", error);
+      }
+    }
+
+    async function saveDay() {
+      clearActionStatus(el.editActionStatus);
+      const record = buildRecord();
+      const issues = validateRecord(record);
+      if (issues.length) {
+        showNotice(issues.join(" "), "bad");
+        return;
+      }
+
+      const existingRecord = records.find((item) => item.gregorianDate === record.gregorianDate);
+      if (existingRecord && !isAdminLoggedIn()) {
+        const request = {
+          id: Date.now().toString(36),
+          requestedAt: new Date().toISOString(),
+          originalDate: existingRecord.gregorianDate,
+          originalRecord: existingRecord,
+          proposedRecord: record
+        };
+        pendingEdits = pendingEdits.filter((item) => item.originalDate !== existingRecord.gregorianDate);
+        pendingEdits.push(request);
+        savePendingEditsToStorage();
+        renderPendingEdits();
+        editingDate = null;
+        showActionStatus(el.editActionStatus, "تم إرسال طلب التعديل للإدارة. لن تتغير البيانات حتى تعتمد الإدارة الطلب.");
+        return;
+      }
+
+      records = records.filter((item) => item.gregorianDate !== record.gregorianDate);
+      records.push(record);
+      records.sort((a, b) => a.gregorianDate.localeCompare(b.gregorianDate));
+      saveRecordsToStorage();
+      renderRecords();
+      clearActionStatus(el.editActionStatus);
+
+      try {
+        const status = await sendToSheet(record);
+        if (status === "sent") {
+          refreshDashboardAfterSave();
+        }
+        showNotice(status === "sent" ? "تم حفظ اليوم وإرساله إلى Google Sheets." : (existingRecord ? "تم تعديل اليوم واعتماده محليًا." : "تم حفظ اليوم محليًا."), "good");
+      } catch {
+        showNotice("تم حفظ اليوم محليًا، لكن تعذر الإرسال إلى Google Sheets.", "warn");
+      }
+    }
+
+    function renderRecords() {
+      el.recordCount.textContent = `${records.length} سجل`;
+      if (!records.length) {
+        el.recordsBody.innerHTML = `<tr><td class="empty" colspan="11">لا توجد بيانات محفوظة حتى الآن</td></tr>`;
+        return;
+      }
+
+      el.recordsBody.innerHTML = records.slice().reverse().map((record) => {
+        const visitors = record.visitors || {};
+        const academy = record.academy || {};
+        const subscribers = record.subscribers || {};
+        const visitorTotal = categoryTotal(visitors);
+        const academyTotal = categoryTotal(academy);
+        const subscriberTotal = categoryTotal(subscribers);
+        return `
+          <tr>
+            <td class="select-cell"><input type="checkbox" data-select-record value="${escapeHtml(record.gregorianDate)}" aria-label="اختيار سجل ${escapeHtml(record.gregorianDate)}"></td>
+            <td>${escapeHtml(record.gregorianDate)}</td>
+            <td>${escapeHtml(record.hijriDate)}</td>
+            <td>${escapeHtml(record.coachName)}</td>
+            <td>${numText(record.totalVisitors)}</td>
+            <td>${numText(visitorTotal)}</td>
+            <td>${numText(academyTotal)}</td>
+            <td>${numText(subscriberTotal)}</td>
+            <td>${money(record.cashAmount)}</td>
+            <td>${money(record.bankAmount)}</td>
+            <td><button class="btn" type="button" data-edit-date="${escapeHtml(record.gregorianDate)}">تحرير</button></td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderPendingEdits() {
+      el.pendingCount.textContent = `${pendingEdits.length} طلب`;
+      if (!pendingEdits.length) {
+        el.pendingEditsBody.innerHTML = `<tr><td class="empty" colspan="6">لا توجد طلبات تعديل</td></tr>`;
+        return;
+      }
+
+      el.pendingEditsBody.innerHTML = pendingEdits.slice().reverse().map((request) => {
+        const record = request.proposedRecord;
+        return `
+          <tr>
+            <td>${escapeHtml(record.gregorianDate)}</td>
+            <td>${escapeHtml(new Date(request.requestedAt).toLocaleString("ar-SA"))}</td>
+            <td>${numText(record.totalVisitors)}</td>
+            <td>${money(record.cashAmount)}</td>
+            <td>${money(record.bankAmount)}</td>
+            <td>
+              <button class="btn primary" type="button" data-approve-edit="${escapeHtml(request.id)}">اعتماد</button>
+              <button class="btn danger" type="button" data-reject-edit="${escapeHtml(request.id)}">رفض</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    async function approvePendingEdit(id) {
+      if (!isAdminLoggedIn()) {
+        openAdminLogin();
+        return;
+      }
+      const request = pendingEdits.find((item) => item.id === id);
+      if (!request) return;
+
+      records = records.filter((item) => item.gregorianDate !== request.originalDate);
+      records.push(request.proposedRecord);
+      records.sort((a, b) => a.gregorianDate.localeCompare(b.gregorianDate));
+      pendingEdits = pendingEdits.filter((item) => item.id !== id);
+      saveRecordsToStorage();
+      savePendingEditsToStorage();
+      renderRecords();
+      renderPendingEdits();
+
+      try {
+        await sendToSheet(request.proposedRecord);
+      } catch {
+        showNotice("تم اعتماد التعديل محليًا، لكن تعذر إرساله إلى Google Sheets.", "warn");
+        return;
+      }
+      showNotice("تم اعتماد التعديل وتحديث بيانات اليوم.", "good");
+    }
+
+    function rejectPendingEdit(id) {
+      if (!isAdminLoggedIn()) {
+        openAdminLogin();
+        return;
+      }
+      pendingEdits = pendingEdits.filter((item) => item.id !== id);
+      savePendingEditsToStorage();
+      renderPendingEdits();
+      showNotice("تم رفض طلب التعديل.", "warn");
+    }
+
+    function selectedRecordDates() {
+      return Array.from(el.recordsBody.querySelectorAll("[data-select-record]:checked"))
+        .map((input) => input.value)
+        .filter(Boolean);
+    }
+
+    function requestDeleteSelected() {
+      clearActionStatus(el.recordsActionStatus);
+      const dates = selectedRecordDates();
+      if (!dates.length) {
+        showActionStatus(el.recordsActionStatus, "اختر سجلًا واحدًا على الأقل قبل طلب الحذف.");
+        return;
+      }
+
+      const uniqueDates = Array.from(new Set(dates));
+      const existingDates = new Set(records.map((record) => record.gregorianDate));
+      const validDates = uniqueDates.filter((date) => existingDates.has(date));
+      if (!validDates.length) {
+        showActionStatus(el.recordsActionStatus, "السجلات المحددة غير موجودة في سجل الأيام.");
+        return;
+      }
+
+      pendingDeletes = pendingDeletes.filter((request) => {
+        const requestedDates = request.dates || [];
+        return !requestedDates.some((date) => validDates.includes(date));
+      });
+      pendingDeletes.push({
+        id: Date.now().toString(36),
+        requestedAt: new Date().toISOString(),
+        dates: validDates
+      });
+      savePendingDeletesToStorage();
+      renderPendingDeletes();
+      el.recordsBody.querySelectorAll("[data-select-record]").forEach((input) => {
+        input.checked = false;
+      });
+      showActionStatus(el.recordsActionStatus, "تم إرسال طلب حذف السجلات للإدارة. لن يتم الحذف حتى تعتمد الإدارة الطلب.");
+    }
+
+    function renderPendingDeletes() {
+      el.pendingDeleteCount.textContent = `${pendingDeletes.length} طلب`;
+      if (!pendingDeletes.length) {
+        el.pendingDeletesBody.innerHTML = `<tr><td class="empty" colspan="4">لا توجد طلبات حذف</td></tr>`;
+        return;
+      }
+
+      el.pendingDeletesBody.innerHTML = pendingDeletes.slice().reverse().map((request) => {
+        const dates = request.dates || [];
+        return `
+          <tr>
+            <td>${dates.map(escapeHtml).join("<br>")}</td>
+            <td>${escapeHtml(new Date(request.requestedAt).toLocaleString("ar-SA"))}</td>
+            <td>${numText(dates.length)}</td>
+            <td>
+              <button class="btn primary" type="button" data-approve-delete="${escapeHtml(request.id)}">اعتماد</button>
+              <button class="btn danger" type="button" data-reject-delete="${escapeHtml(request.id)}">رفض</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    async function approvePendingDelete(id) {
+      if (!isAdminLoggedIn()) {
+        openAdminLogin();
+        return;
+      }
+      const request = pendingDeletes.find((item) => item.id === id);
+      if (!request) return;
+
+      const dates = request.dates || [];
+      records = records.filter((record) => !dates.includes(record.gregorianDate));
+      pendingDeletes = pendingDeletes.filter((item) => item.id !== id);
+      saveRecordsToStorage();
+      savePendingDeletesToStorage();
+      renderRecords();
+      renderPendingDeletes();
+      clearActionStatus(el.recordsActionStatus);
+
+      try {
+        await sendDeleteToSheet(dates);
+      } catch {
+        // الحذف المحلي هو المعتمد في الواجهة، ولا نعرض تفاصيل الربط للمدرب.
+      }
+      showActionStatus(el.recordsActionStatus, "تم اعتماد الحذف وحذف السجلات المحددة من النظام.");
+    }
+
+    function rejectPendingDelete(id) {
+      if (!isAdminLoggedIn()) {
+        openAdminLogin();
+        return;
+      }
+      pendingDeletes = pendingDeletes.filter((item) => item.id !== id);
+      savePendingDeletesToStorage();
+      renderPendingDeletes();
+      showNotice("تم رفض طلب الحذف.", "warn");
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function categoryTotal(group) {
+      return (group.cash || 0) + (group.bank || 0) + (group.splitCount || 0);
+    }
+
+    function categoryCashAmount(group) {
+      return (group.cash || 0) * (group.price || 0) + (group.splitCash || 0);
+    }
+
+    function categoryBankAmount(group) {
+      return (group.bank || 0) * (group.price || 0) + (group.splitBank || 0);
+    }
+
+    function summarizeRecords(items) {
+      return items.reduce((summary, record) => {
+        const visitors = record.visitors || {};
+        const academy = record.academy || {};
+        const subscribers = record.subscribers || {};
+        summary.days += 1;
+        summary.totalVisitors += record.totalVisitors || 0;
+        summary.enteredTotal += record.enteredTotal || 0;
+        summary.visitors += categoryTotal(visitors);
+        summary.academy += categoryTotal(academy);
+        summary.subscribers += categoryTotal(subscribers);
+        summary.visitorsCashAmount += categoryCashAmount(visitors);
+        summary.visitorsBankAmount += categoryBankAmount(visitors);
+        summary.academyCashAmount += categoryCashAmount(academy);
+        summary.academyBankAmount += categoryBankAmount(academy);
+        summary.subscribersCashAmount += categoryCashAmount(subscribers);
+        summary.subscribersBankAmount += categoryBankAmount(subscribers);
+        summary.cashAmount += record.cashAmount || 0;
+        summary.bankAmount += record.bankAmount || 0;
+        summary.grandAmount += record.grandAmount || 0;
+        summary.splitPeople += (visitors.splitCount || 0) + (academy.splitCount || 0) + (subscribers.splitCount || 0);
+        summary.splitCash += (visitors.splitCash || 0) + (academy.splitCash || 0) + (subscribers.splitCash || 0);
+        summary.splitBank += (visitors.splitBank || 0) + (academy.splitBank || 0) + (subscribers.splitBank || 0);
+        return summary;
+      }, {
+        days: 0,
+        totalVisitors: 0,
+        enteredTotal: 0,
+        visitors: 0,
+        academy: 0,
+        subscribers: 0,
+        visitorsCashAmount: 0,
+        visitorsBankAmount: 0,
+        academyCashAmount: 0,
+        academyBankAmount: 0,
+        subscribersCashAmount: 0,
+        subscribersBankAmount: 0,
+        cashAmount: 0,
+        bankAmount: 0,
+        grandAmount: 0,
+        splitPeople: 0,
+        splitCash: 0,
+        splitBank: 0
+      });
+    }
+
+    function xmlEscape(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&apos;");
+    }
+
+    function excelCell(value, styleId = "Data", type = "String") {
+      const isNumber = type === "Number" && Number.isFinite(Number(value));
+      const dataType = isNumber ? "Number" : "String";
+      const dataValue = isNumber ? Number(value) : value;
+      return `<Cell ss:StyleID="${styleId}"><Data ss:Type="${dataType}">${xmlEscape(dataValue)}</Data></Cell>`;
+    }
+
+    function excelRow(cells, styleId = "Data") {
+      return `<Row>${cells.map((cell) => {
+        if (typeof cell === "object" && cell !== null) {
+          return excelCell(cell.value, cell.style || styleId, cell.type || "String");
+        }
+        return excelCell(cell, styleId);
+      }).join("")}</Row>`;
+    }
+
+    function excelWorksheet(name, rows, columnCount = 10) {
+      const columns = Array.from({ length: columnCount }, () => `<Column ss:Width="125"/>`).join("");
+      return `
+        <Worksheet ss:Name="${xmlEscape(name)}">
+          <Table>${columns}${rows.join("")}</Table>
+          <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+            <DisplayRightToLeft/>
+          </WorksheetOptions>
+        </Worksheet>
+      `;
+    }
+
+    function exportExcel() {
+      if (!records.length) {
+        showNotice("لا توجد بيانات للتصدير.", "warn");
+        return;
+      }
+
+      const sortedRecords = records.slice().sort((a, b) => b.gregorianDate.localeCompare(a.gregorianDate));
+      const summary = summarizeRecords(records);
+      const periodStart = records.map((record) => record.gregorianDate).sort()[0] || "";
+      const periodEnd = records.map((record) => record.gregorianDate).sort().slice(-1)[0] || "";
+
+      const dashboardRows = [
+        `<Row ss:Height="28"><Cell ss:MergeAcross="3" ss:StyleID="Title"><Data ss:Type="String">داش بورد تقرير المسبح</Data></Cell></Row>`,
+        excelRow(["الفترة", `${periodStart} إلى ${periodEnd}`, "تاريخ التصدير", todayISO()], "Data"),
+        excelRow(["المؤشر", "القيمة", "المؤشر", "القيمة"], "Header"),
+        excelRow(["عدد الأيام", { value: summary.days, type: "Number" }, "عدد الزوار الكلي", { value: summary.totalVisitors, type: "Number" }]),
+        excelRow(["زوار يوميين", { value: summary.visitors, type: "Number" }, "أبناء الأكاديمية", { value: summary.academy, type: "Number" }]),
+        excelRow(["مشتركين زوار", { value: summary.subscribers, type: "Number" }, "الدفع الجزئي - عدد الأشخاص", { value: summary.splitPeople, type: "Number" }]),
+        excelRow(["مبلغ الكاش", { value: summary.cashAmount, type: "Number" }, "مبلغ التحويل", { value: summary.bankAmount, type: "Number" }]),
+        excelRow(["كاش الدفع الجزئي", { value: summary.splitCash, type: "Number" }, "تحويل الدفع الجزئي", { value: summary.splitBank, type: "Number" }]),
+        excelRow(["إجمالي المبالغ", { value: summary.grandAmount, type: "Number" }, "حالة المطابقة", summary.totalVisitors === summary.enteredTotal ? "مطابق" : "يوجد اختلاف"])
+      ];
+
+      const tableHeaders = [
+        "التاريخ", "الهجري", "اليوم", "المدرب", "الزوار الكلي",
+        "الزوار", "زوار كاش", "زوار تحويل", "زوار دفع جزئي", "زوار كاش جزئي", "زوار تحويل جزئي",
+        "أبناء الأكاديمية", "أكاديمية كاش", "أكاديمية تحويل", "أكاديمية دفع جزئي", "أكاديمية كاش جزئي", "أكاديمية تحويل جزئي", "أسماء أبناء الأكاديمية",
+        "مشتركين الزوار", "مشتركين كاش", "مشتركين تحويل", "مشتركين دفع جزئي", "مشتركين كاش جزئي", "مشتركين تحويل جزئي", "أسماء مشتركين الزوار",
+        "الكاش", "التحويل", "الإجمالي", "ملاحظة"
+      ];
+      const tableRows = [
+        `<Row ss:Height="28"><Cell ss:MergeAcross="${tableHeaders.length - 1}" ss:StyleID="Title"><Data ss:Type="String">سجل الأيام المحفوظة</Data></Cell></Row>`,
+        excelRow(tableHeaders.map((value) => ({ value, style: "Header" })))
+      ];
+
+      sortedRecords.forEach((record) => {
+        const visitors = record.visitors || {};
+        const academy = record.academy || {};
+        const subscribers = record.subscribers || {};
+        tableRows.push(excelRow([
+          record.gregorianDate,
+          record.hijriDate,
+          record.dayName || "",
+          record.coachName,
+          { value: record.totalVisitors || 0, type: "Number" },
+          { value: categoryTotal(visitors), type: "Number" },
+          { value: visitors.cash || 0, type: "Number" },
+          { value: visitors.bank || 0, type: "Number" },
+          { value: visitors.splitCount || 0, type: "Number" },
+          { value: visitors.splitCash || 0, type: "Number" },
+          { value: visitors.splitBank || 0, type: "Number" },
+          { value: categoryTotal(academy), type: "Number" },
+          { value: academy.cash || 0, type: "Number" },
+          { value: academy.bank || 0, type: "Number" },
+          { value: academy.splitCount || 0, type: "Number" },
+          { value: academy.splitCash || 0, type: "Number" },
+          { value: academy.splitBank || 0, type: "Number" },
+          { value: categoryTotal(subscribers), type: "Number" },
+          { value: subscribers.cash || 0, type: "Number" },
+          { value: subscribers.bank || 0, type: "Number" },
+          { value: subscribers.splitCount || 0, type: "Number" },
+          { value: subscribers.splitCash || 0, type: "Number" },
+          { value: subscribers.splitBank || 0, type: "Number" },
+          { value: record.cashAmount || 0, type: "Number" },
+          { value: record.bankAmount || 0, type: "Number" },
+          { value: record.grandAmount || 0, type: "Number" },
+          record.notes || ""
+        ]));
+      });
+
+      const workbook = `<?xml version="1.0" encoding="UTF-8"?>
+        <?mso-application progid="Excel.Sheet"?>
+        <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+          xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:x="urn:schemas-microsoft-com:office:excel"
+          xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+          <Styles>
+            <Style ss:ID="Default" ss:Name="Normal">
+              <Alignment ss:Horizontal="Right" ss:Vertical="Center" ss:ReadingOrder="RightToLeft"/>
+              <Font ss:FontName="Tahoma" ss:Size="11"/>
+            </Style>
+            <Style ss:ID="Title">
+              <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:ReadingOrder="RightToLeft"/>
+              <Font ss:FontName="Tahoma" ss:Size="18" ss:Bold="1" ss:Color="#0F172A"/>
+              <Interior ss:Color="#EAF6F8" ss:Pattern="Solid"/>
+              <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BFD7DF"/></Borders>
+            </Style>
+            <Style ss:ID="Header">
+              <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:ReadingOrder="RightToLeft"/>
+              <Font ss:FontName="Tahoma" ss:Size="11" ss:Bold="1" ss:Color="#0F172A"/>
+              <Interior ss:Color="#F1F5F9" ss:Pattern="Solid"/>
+              <Borders>
+                <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+                <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+                <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+                <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+              </Borders>
+            </Style>
+            <Style ss:ID="Data">
+              <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:ReadingOrder="RightToLeft" ss:WrapText="1"/>
+              <Font ss:FontName="Tahoma" ss:Size="11"/>
+              <Borders>
+                <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+                <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+                <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+                <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+              </Borders>
+            </Style>
+          </Styles>
+          ${excelWorksheet("Dashboard", dashboardRows, 4)}
+          ${excelWorksheet("سجل الأيام", tableRows, tableHeaders.length)}
+        </Workbook>`;
+
+      const blob = new Blob(["\ufeff" + workbook], { type: "application/vnd.ms-excel;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `pool-report-${todayISO()}.xls`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function xlsxColumnName(index) {
+      let name = "";
+      let current = index;
+      while (current > 0) {
+        const mod = (current - 1) % 26;
+        name = String.fromCharCode(65 + mod) + name;
+        current = Math.floor((current - mod) / 26);
+      }
+      return name;
+    }
+
+    function xlsxCell(row, column, value, style = 0, type = "string") {
+      const ref = `${xlsxColumnName(column)}${row}`;
+      if (type === "number") {
+        return `<c r="${ref}" s="${style}"><v>${Number(value || 0)}</v></c>`;
+      }
+      return `<c r="${ref}" t="inlineStr" s="${style}"><is><t>${xmlEscape(value)}</t></is></c>`;
+    }
+
+    function xlsxRow(rowNumber, cells, height = "") {
+      const heightAttrs = height ? ` ht="${height}" customHeight="1"` : "";
+      return `<row r="${rowNumber}"${heightAttrs}>${cells.join("")}</row>`;
+    }
+
+    function dashboardSheetXml(summary, periodStart, periodEnd) {
+      const rows = [
+        xlsxRow(1, [xlsxCell(1, 1, "داش بورد تقرير المسبح", 1)], 34),
+        xlsxRow(3, [
+          xlsxCell(3, 1, "الفترة", 2),
+          xlsxCell(3, 2, `${periodStart} إلى ${periodEnd}`, 0),
+          xlsxCell(3, 4, "تاريخ التصدير", 2),
+          xlsxCell(3, 5, todayISO(), 0)
+        ]),
+        xlsxRow(5, [xlsxCell(5, 1, "المؤشر", 2), xlsxCell(5, 2, "القيمة", 2), xlsxCell(5, 4, "المؤشر", 2), xlsxCell(5, 5, "القيمة", 2)], 24),
+        xlsxRow(6, [xlsxCell(6, 1, "عدد الأيام داخل النطاق", 0), xlsxCell(6, 2, summary.days, 3, "number"), xlsxCell(6, 4, "عدد الزوار الكلي", 0), xlsxCell(6, 5, summary.totalVisitors, 3, "number")]),
+        xlsxRow(7, [xlsxCell(7, 1, "زوار يوميين", 0), xlsxCell(7, 2, summary.visitors, 3, "number"), xlsxCell(7, 4, "أبناء الأكاديمية", 0), xlsxCell(7, 5, summary.academy, 3, "number")]),
+        xlsxRow(8, [xlsxCell(8, 1, "مشتركين زوار", 0), xlsxCell(8, 2, summary.subscribers, 3, "number"), xlsxCell(8, 4, "الدفع الجزئي - عدد الأشخاص", 0), xlsxCell(8, 5, summary.splitPeople, 3, "number")]),
+        xlsxRow(9, [xlsxCell(9, 1, "إجمالي الكاش لكل الفئات", 0), xlsxCell(9, 2, summary.cashAmount, 3, "number"), xlsxCell(9, 4, "إجمالي التحويل لكل الفئات", 0), xlsxCell(9, 5, summary.bankAmount, 3, "number")]),
+        xlsxRow(10, [xlsxCell(10, 1, "كاش الدفع الجزئي", 0), xlsxCell(10, 2, summary.splitCash, 3, "number"), xlsxCell(10, 4, "تحويل الدفع الجزئي", 0), xlsxCell(10, 5, summary.splitBank, 3, "number")]),
+        xlsxRow(11, [xlsxCell(11, 1, "إجمالي المبالغ", 0), xlsxCell(11, 2, summary.grandAmount, 3, "number"), xlsxCell(11, 4, "حالة المطابقة", 0), xlsxCell(11, 5, summary.totalVisitors === summary.enteredTotal ? "مطابق" : "يوجد اختلاف", 3)]),
+        xlsxRow(13, [xlsxCell(13, 1, "الفئة", 2), xlsxCell(13, 2, "العدد", 2), xlsxCell(13, 4, "الفئة", 2), xlsxCell(13, 5, "الكاش", 2), xlsxCell(13, 6, "التحويل البنكي", 2), xlsxCell(13, 7, "الإجمالي", 2)], 24),
+        xlsxRow(14, [xlsxCell(14, 1, "الزوار", 0), xlsxCell(14, 2, summary.visitors, 0, "number"), xlsxCell(14, 4, "الزوار", 0), xlsxCell(14, 5, summary.visitorsCashAmount, 0, "number"), xlsxCell(14, 6, summary.visitorsBankAmount, 0, "number"), xlsxCell(14, 7, summary.visitorsCashAmount + summary.visitorsBankAmount, 0, "number")]),
+        xlsxRow(15, [xlsxCell(15, 1, "أبناء الأكاديمية", 0), xlsxCell(15, 2, summary.academy, 0, "number"), xlsxCell(15, 4, "أبناء الأكاديمية", 0), xlsxCell(15, 5, summary.academyCashAmount, 0, "number"), xlsxCell(15, 6, summary.academyBankAmount, 0, "number"), xlsxCell(15, 7, summary.academyCashAmount + summary.academyBankAmount, 0, "number")]),
+        xlsxRow(16, [xlsxCell(16, 1, "مشتركين الزوار", 0), xlsxCell(16, 2, summary.subscribers, 0, "number"), xlsxCell(16, 4, "مشتركين الزوار", 0), xlsxCell(16, 5, summary.subscribersCashAmount, 0, "number"), xlsxCell(16, 6, summary.subscribersBankAmount, 0, "number"), xlsxCell(16, 7, summary.subscribersCashAmount + summary.subscribersBankAmount, 0, "number")]),
+        xlsxRow(17, [xlsxCell(17, 4, "الإجمالي", 2), xlsxCell(17, 5, summary.cashAmount, 2, "number"), xlsxCell(17, 6, summary.bankAmount, 2, "number"), xlsxCell(17, 7, summary.grandAmount, 2, "number")])
+      ];
+
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+          <dimension ref="A1:H42"/>
+          <sheetViews><sheetView workbookViewId="0" rightToLeft="1"/></sheetViews>
+          <sheetFormatPr defaultRowHeight="22"/>
+          <cols>
+            <col min="1" max="1" width="30" customWidth="1"/>
+            <col min="2" max="2" width="16" customWidth="1"/>
+            <col min="3" max="3" width="5" customWidth="1"/>
+            <col min="4" max="4" width="31" customWidth="1"/>
+            <col min="5" max="7" width="17" customWidth="1"/>
+            <col min="8" max="8" width="5" customWidth="1"/>
+          </cols>
+          <sheetData>${rows.join("")}</sheetData>
+          <mergeCells count="1"><mergeCell ref="A1:H1"/></mergeCells>
+          <drawing r:id="rId1"/>
+        </worksheet>`;
+    }
+
+    function recordsSheetXml(sortedRecords) {
+      const headers = [
+        "التاريخ", "الهجري", "اليوم", "المدرب", "الزوار الكلي",
+        "الزوار", "زوار كاش", "زوار تحويل", "زوار دفع جزئي", "زوار كاش جزئي", "زوار تحويل جزئي",
+        "أبناء الأكاديمية", "أكاديمية كاش", "أكاديمية تحويل", "أكاديمية دفع جزئي", "أكاديمية كاش جزئي", "أكاديمية تحويل جزئي",
+        "مشتركين الزوار", "مشتركين كاش", "مشتركين تحويل", "مشتركين دفع جزئي", "مشتركين كاش جزئي", "مشتركين تحويل جزئي",
+        "الكاش", "التحويل", "الإجمالي", "ملاحظة"
+      ];
+      const rows = [
+        xlsxRow(1, [xlsxCell(1, 1, "سجل الأيام المحفوظة", 1)]),
+        xlsxRow(3, headers.map((header, index) => xlsxCell(3, index + 1, header, 2)))
+      ];
+
+      sortedRecords.forEach((record, index) => {
+        const rowNumber = index + 4;
+        const visitors = record.visitors || {};
+        const academy = record.academy || {};
+        const subscribers = record.subscribers || {};
+        const values = [
+          record.gregorianDate,
+          record.hijriDate,
+          record.dayName || "",
+          record.coachName,
+          { value: record.totalVisitors || 0, type: "number" },
+          { value: categoryTotal(visitors), type: "number" },
+          { value: visitors.cash || 0, type: "number" },
+          { value: visitors.bank || 0, type: "number" },
+          { value: visitors.splitCount || 0, type: "number" },
+          { value: visitors.splitCash || 0, type: "number" },
+          { value: visitors.splitBank || 0, type: "number" },
+          { value: categoryTotal(academy), type: "number" },
+          { value: academy.cash || 0, type: "number" },
+          { value: academy.bank || 0, type: "number" },
+          { value: academy.splitCount || 0, type: "number" },
+          { value: academy.splitCash || 0, type: "number" },
+          { value: academy.splitBank || 0, type: "number" },
+          namesText(academy),
+          { value: categoryTotal(subscribers), type: "number" },
+          { value: subscribers.cash || 0, type: "number" },
+          { value: subscribers.bank || 0, type: "number" },
+          { value: subscribers.splitCount || 0, type: "number" },
+          { value: subscribers.splitCash || 0, type: "number" },
+          { value: subscribers.splitBank || 0, type: "number" },
+          namesText(subscribers),
+          { value: record.cashAmount || 0, type: "number" },
+          { value: record.bankAmount || 0, type: "number" },
+          { value: record.grandAmount || 0, type: "number" },
+          record.notes || ""
+        ];
+        rows.push(xlsxRow(rowNumber, values.map((item, cellIndex) => {
+          if (typeof item === "object" && item !== null) {
+            return xlsxCell(rowNumber, cellIndex + 1, item.value, 0, item.type);
+          }
+          return xlsxCell(rowNumber, cellIndex + 1, item, 0);
+        })));
+      });
+
+      const recordColumnWidth = (index) => {
+        if ([1, 2, 3, 4].includes(index)) return 16;
+        if ([18, 25, 29].includes(index)) return 30;
+        if ([12, 19].includes(index)) return 22;
+        return 14;
+      };
+      const columns = Array.from({ length: headers.length }, (_, index) => `<col min="${index + 1}" max="${index + 1}" width="${recordColumnWidth(index + 1)}" customWidth="1"/>`).join("");
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+          <dimension ref="A1:${xlsxColumnName(headers.length)}${Math.max(sortedRecords.length + 3, 4)}"/>
+          <sheetViews><sheetView workbookViewId="0" rightToLeft="1"/></sheetViews>
+          <sheetFormatPr defaultRowHeight="24"/>
+          <cols>${columns}</cols>
+          <sheetData>${rows.join("")}</sheetData>
+          <mergeCells count="1"><mergeCell ref="A1:${xlsxColumnName(headers.length)}1"/></mergeCells>
+        </worksheet>`;
+    }
+
+    function xlsxDrawingXml() {
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+          <xdr:twoCellAnchor>
+            <xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>20</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>
+            <xdr:to><xdr:col>4</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>40</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>
+            <xdr:graphicFrame macro="">
+              <xdr:nvGraphicFramePr><xdr:cNvPr id="2" name="توزيع الزوار"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr>
+              <xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm>
+              <a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="rId1"/></a:graphicData></a:graphic>
+            </xdr:graphicFrame>
+            <xdr:clientData/>
+          </xdr:twoCellAnchor>
+          <xdr:twoCellAnchor>
+            <xdr:from><xdr:col>4</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>20</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>
+            <xdr:to><xdr:col>8</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>40</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>
+            <xdr:graphicFrame macro="">
+              <xdr:nvGraphicFramePr><xdr:cNvPr id="3" name="الكاش والتحويل"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr>
+              <xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm>
+              <a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="rId2"/></a:graphicData></a:graphic>
+            </xdr:graphicFrame>
+            <xdr:clientData/>
+          </xdr:twoCellAnchor>
+        </xdr:wsDr>`;
+    }
+
+    function pieChartXml() {
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+          <c:chart>
+            <c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>توزيع الزوار</a:t></a:r></a:p></c:rich></c:tx></c:title>
+            <c:plotArea><c:layout/><c:pieChart><c:varyColors val="1"/><c:ser><c:idx val="0"/><c:order val="0"/>
+              <c:tx><c:v>عدد الزوار حسب الفئة</c:v></c:tx>
+              <c:cat><c:strRef><c:f>Dashboard!$A$14:$A$16</c:f></c:strRef></c:cat>
+              <c:val><c:numRef><c:f>Dashboard!$B$14:$B$16</c:f></c:numRef></c:val>
+              <c:dLbls><c:showCatName val="0"/><c:showVal val="1"/><c:showPercent val="1"/><c:showSerName val="0"/><c:showLeaderLines val="0"/></c:dLbls>
+            </c:ser></c:pieChart></c:plotArea>
+            <c:legend><c:legendPos val="r"/></c:legend>
+          </c:chart>
+        </c:chartSpace>`;
+    }
+
+    function barChartXml() {
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+          <c:chart>
+            <c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>الكاش والتحويل حسب الفئة</a:t></a:r></a:p></c:rich></c:tx></c:title>
+            <c:plotArea><c:layout/><c:barChart><c:barDir val="col"/><c:grouping val="clustered"/>
+            <c:ser><c:idx val="0"/><c:order val="0"/>
+              <c:tx><c:strRef><c:f>Dashboard!$E$13</c:f></c:strRef></c:tx>
+              <c:cat><c:strRef><c:f>Dashboard!$D$14:$D$16</c:f></c:strRef></c:cat>
+              <c:val><c:numRef><c:f>Dashboard!$E$14:$E$16</c:f></c:numRef></c:val>
+            </c:ser>
+            <c:ser><c:idx val="1"/><c:order val="1"/>
+              <c:tx><c:strRef><c:f>Dashboard!$F$13</c:f></c:strRef></c:tx>
+              <c:cat><c:strRef><c:f>Dashboard!$D$14:$D$16</c:f></c:strRef></c:cat>
+              <c:val><c:numRef><c:f>Dashboard!$F$14:$F$16</c:f></c:numRef></c:val>
+            </c:ser><c:axId val="10"/><c:axId val="20"/></c:barChart>
+            <c:catAx><c:axId val="10"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:axPos val="b"/><c:crossAx val="20"/></c:catAx>
+            <c:valAx><c:axId val="20"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:axPos val="l"/><c:crossAx val="10"/></c:valAx>
+            </c:plotArea>
+            <c:legend><c:legendPos val="b"/></c:legend>
+          </c:chart>
+        </c:chartSpace>`;
+    }
+
+    function xlsxStylesXml() {
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+          <fonts count="3"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="18"/><name val="Arial"/><color rgb="FF0F172A"/></font><font><b/><sz val="11"/><name val="Arial"/></font></fonts>
+          <fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEAF6F8"/><bgColor indexed="64"/></patternFill></fill></fills>
+          <borders count="2"><border/><border><left style="thin"><color rgb="FFE2E8F0"/></left><right style="thin"><color rgb="FFE2E8F0"/></right><top style="thin"><color rgb="FFE2E8F0"/></top><bottom style="thin"><color rgb="FFE2E8F0"/></bottom></border></borders>
+          <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+          <cellXfs count="4">
+            <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center" readingOrder="2" wrapText="1"/></xf>
+            <xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center" readingOrder="2" wrapText="1"/></xf>
+            <xf numFmtId="0" fontId="2" fillId="2" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center" readingOrder="2" wrapText="1"/></xf>
+            <xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center" readingOrder="2" wrapText="1"/></xf>
+          </cellXfs>
+          <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+        </styleSheet>`;
+    }
+
+    function crc32(bytes) {
+      if (!crc32.table) {
+        crc32.table = Array.from({ length: 256 }, (_, n) => {
+          let c = n;
+          for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+          return c >>> 0;
+        });
+      }
+      let crc = 0xffffffff;
+      for (const byte of bytes) crc = crc32.table[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+      return (crc ^ 0xffffffff) >>> 0;
+    }
+
+    function uint16(value) {
+      return [value & 255, (value >>> 8) & 255];
+    }
+
+    function uint32(value) {
+      return [value & 255, (value >>> 8) & 255, (value >>> 16) & 255, (value >>> 24) & 255];
+    }
+
+    function concatBytes(chunks) {
+      const length = chunks.reduce((total, chunk) => total + chunk.length, 0);
+      const output = new Uint8Array(length);
+      let offset = 0;
+      chunks.forEach((chunk) => {
+        output.set(chunk, offset);
+        offset += chunk.length;
+      });
+      return output;
+    }
+
+    function createZip(files) {
+      const encoder = new TextEncoder();
+      const localParts = [];
+      const centralParts = [];
+      let offset = 0;
+
+      files.forEach((file) => {
+        const nameBytes = encoder.encode(file.name);
+        const dataBytes = encoder.encode(file.content);
+        const crc = crc32(dataBytes);
+        const localHeader = new Uint8Array([
+          ...uint32(0x04034b50), ...uint16(20), ...uint16(0), ...uint16(0), ...uint16(0), ...uint16(0),
+          ...uint32(crc), ...uint32(dataBytes.length), ...uint32(dataBytes.length),
+          ...uint16(nameBytes.length), ...uint16(0)
+        ]);
+        localParts.push(localHeader, nameBytes, dataBytes);
+        const centralHeader = new Uint8Array([
+          ...uint32(0x02014b50), ...uint16(20), ...uint16(20), ...uint16(0), ...uint16(0), ...uint16(0), ...uint16(0),
+          ...uint32(crc), ...uint32(dataBytes.length), ...uint32(dataBytes.length),
+          ...uint16(nameBytes.length), ...uint16(0), ...uint16(0), ...uint16(0), ...uint16(0), ...uint32(0), ...uint32(offset)
+        ]);
+        centralParts.push(centralHeader, nameBytes);
+        offset += localHeader.length + nameBytes.length + dataBytes.length;
+      });
+
+      const centralOffset = offset;
+      const centralBytes = concatBytes(centralParts);
+      const end = new Uint8Array([
+        ...uint32(0x06054b50), ...uint16(0), ...uint16(0), ...uint16(files.length), ...uint16(files.length),
+        ...uint32(centralBytes.length), ...uint32(centralOffset), ...uint16(0)
+      ]);
+      return concatBytes([...localParts, centralBytes, end]);
+    }
+
+    function getExportRecords() {
+      if (el.exportAllTime.checked) {
+        return records.slice();
+      }
+
+      const start = el.exportStartDate.value;
+      const end = el.exportEndDate.value;
+
+      if (start && end && start > end) {
+        showNotice("تاريخ البداية يجب أن يكون قبل تاريخ النهاية.", "bad");
+        return null;
+      }
+
+      return records.filter((record) => {
+        const date = record.gregorianDate || "";
+        if (start && date < start) return false;
+        if (end && date > end) return false;
+        return true;
+      });
+    }
+
+    function updateExportRangeState() {
+      const disabled = el.exportAllTime.checked;
+      el.exportStartDate.disabled = disabled;
+      el.exportEndDate.disabled = disabled;
+    }
+
+    function exportDashboardXlsx() {
+      const exportRecords = getExportRecords();
+      if (!exportRecords) return;
+
+      if (!exportRecords.length) {
+        showNotice("لا توجد بيانات للتصدير.", "warn");
+        return;
+      }
+
+      const sortedRecords = exportRecords.slice().sort((a, b) => b.gregorianDate.localeCompare(a.gregorianDate));
+      const summary = summarizeRecords(exportRecords);
+      const sortedDates = exportRecords.map((record) => record.gregorianDate).sort();
+      const periodStart = sortedDates[0] || "";
+      const periodEnd = sortedDates.slice(-1)[0] || "";
+      const files = [
+        { name: "[Content_Types].xml", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/><Override PartName="/xl/charts/chart1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/><Override PartName="/xl/charts/chart2.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/></Types>` },
+        { name: "_rels/.rels", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
+        { name: "xl/workbook.xml", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets><sheet name="Dashboard" sheetId="1" r:id="rId1"/><sheet name="سجل الأيام" sheetId="2" r:id="rId2"/></sheets></workbook>` },
+        { name: "xl/_rels/workbook.xml.rels", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
+        { name: "xl/styles.xml", content: xlsxStylesXml() },
+        { name: "xl/worksheets/sheet1.xml", content: dashboardSheetXml(summary, periodStart, periodEnd) },
+        { name: "xl/worksheets/sheet2.xml", content: recordsSheetXml(sortedRecords) },
+        { name: "xl/worksheets/_rels/sheet1.xml.rels", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>` },
+        { name: "xl/drawings/drawing1.xml", content: xlsxDrawingXml() },
+        { name: "xl/drawings/_rels/drawing1.xml.rels", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart2.xml"/></Relationships>` },
+        { name: "xl/charts/chart1.xml", content: pieChartXml() },
+        { name: "xl/charts/chart2.xml", content: barChartXml() }
+      ];
+
+      const zipBytes = createZip(files);
+      const blob = new Blob([zipBytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      const rangeName = el.exportAllTime.checked ? "all-time" : `${periodStart || "start"}_${periodEnd || "end"}`;
+      link.download = `pool-dashboard-${rangeName}.xlsx`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function wireEvents() {
+      document.querySelectorAll('input[type="number"]').forEach((node) => {
+        node.setAttribute("inputmode", node.step && node.step !== "1" ? "decimal" : "numeric");
+      });
+      document.querySelectorAll("input, textarea").forEach((node) => {
+        node.addEventListener("input", recalc);
+        node.addEventListener("change", recalc);
+      });
+      el.gregorianDate.addEventListener("change", () => {
+        updateDateFields();
+        if (!isLoadingRecord) resetDailyInputs();
+        recalc();
+      });
+      el.settingsBtn.addEventListener("click", openAdminPanel);
+      el.saveSettingsBtn.addEventListener("click", saveSettings);
+      el.loginBtn.addEventListener("click", login);
+      el.loginPassword.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") login();
+      });
+      el.copyBtn.addEventListener("click", copyReport);
+      el.saveBtn.addEventListener("click", saveDay);
+      el.academyEnabled.addEventListener("change", () => {
+        updateOptionalSections();
+        recalc();
+      });
+      el.subscriberEnabled.addEventListener("change", () => {
+        updateOptionalSections();
+        recalc();
+      });
+      el.exportBtn.addEventListener("click", exportDashboardXlsx);
+      el.exportAllTime.addEventListener("change", updateExportRangeState);
+      el.deleteSelectedBtn.addEventListener("click", requestDeleteSelected);
+      el.recordsBody.addEventListener("click", (event) => {
+        const editButton = event.target.closest("[data-edit-date]");
+        if (editButton) loadRecordForEdit(editButton.dataset.editDate);
+      });
+      el.pendingEditsBody.addEventListener("click", (event) => {
+        const approveButton = event.target.closest("[data-approve-edit]");
+        const rejectButton = event.target.closest("[data-reject-edit]");
+        if (approveButton) approvePendingEdit(approveButton.dataset.approveEdit);
+        if (rejectButton) rejectPendingEdit(rejectButton.dataset.rejectEdit);
+      });
+      el.pendingDeletesBody.addEventListener("click", (event) => {
+        const approveButton = event.target.closest("[data-approve-delete]");
+        const rejectButton = event.target.closest("[data-reject-delete]");
+        if (approveButton) approvePendingDelete(approveButton.dataset.approveDelete);
+        if (rejectButton) rejectPendingDelete(rejectButton.dataset.rejectDelete);
+      });
+    }
+
+    function init() {
+      applySettings();
+      el.gregorianDate.value = todayISO();
+      updateDateFields();
+      wireEvents();
+      updateOptionalSections();
+      applyLoginGate();
+      updateExportRangeState();
+      renderRecords();
+      renderPendingEdits();
+      renderPendingDeletes();
+      recalc();
+      loadRecordsFromSheet();
+    }
+
+    init();
+  </script>
+</body>
+</html>
