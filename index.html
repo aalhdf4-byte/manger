@@ -978,7 +978,6 @@
       pendingEdits: "simple_pool_pending_edits_v1",
       pendingDeletes: "simple_pool_pending_deletes_v1"
     };
-    const DEFAULT_SPREADSHEET_EXPORT_URL = "https://docs.google.com/spreadsheets/d/1S38GdszFmgHJVe8WB79h04iddOcsTZEyMhIqu4-WA4/export?format=xlsx";
 
     const arabicDays = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
     const ids = [
@@ -2496,37 +2495,24 @@
 
     async function exportGoogleSheetXlsx() {
       const exportWindow = window.open("about:blank", "_blank");
-      showNotice("جاري تجهيز ملف Google Sheet للتصدير...", "good");
-      try {
-        if (!settings.scriptUrl || validateAppsScriptUrl(settings.scriptUrl)) {
-          throw new Error("missing-script-url");
-        }
-        const result = await jsonpSheetAction("getSpreadsheetExportUrl");
-        if (!result.ok || !result.exportUrl) {
-          throw new Error(result.message || "export-url-missing");
-        }
-        if (exportWindow) {
-          exportWindow.location.href = result.exportUrl;
-        } else {
-          const link = document.createElement("a");
-          link.href = result.exportUrl;
-          link.target = "_blank";
-          link.rel = "noopener";
-          link.click();
-        }
-        showNotice("تم فتح تصدير Google Sheet. إذا لم يبدأ التحميل، تأكد من السماح بالنوافذ المنبثقة.", "good");
-      } catch (error) {
-        if (exportWindow) {
-          exportWindow.location.href = DEFAULT_SPREADSHEET_EXPORT_URL;
-        } else {
-          const link = document.createElement("a");
-          link.href = DEFAULT_SPREADSHEET_EXPORT_URL;
-          link.target = "_blank";
-          link.rel = "noopener";
-          link.click();
-        }
-        showNotice("تم فتح تصدير Google Sheet بالرابط المباشر.", "good");
+      if (!settings.scriptUrl || validateAppsScriptUrl(settings.scriptUrl)) {
+        if (exportWindow) exportWindow.close();
+        showNotice("أدخل رابط Google Apps Script من لوحة الإدارة قبل التصدير.", "warn");
+        return;
       }
+
+      const separator = settings.scriptUrl.includes("?") ? "&" : "?";
+      const downloadUrl = `${settings.scriptUrl}${separator}action=downloadSpreadsheet&v=${Date.now()}`;
+      if (exportWindow) {
+        exportWindow.location.href = downloadUrl;
+      } else {
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.click();
+      }
+      showNotice("تم فتح صفحة تنزيل Google Sheet بصيغة Excel.", "good");
     }
 
     function exportDashboardXlsx() {
