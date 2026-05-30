@@ -978,6 +978,7 @@
       pendingEdits: "simple_pool_pending_edits_v1",
       pendingDeletes: "simple_pool_pending_deletes_v1"
     };
+    const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybBwZoXi7qWSyxw_oEnLHvJIHPg1nkCh7Fxo2v6q7JdNh14G4OnZGlYW6Kp-Tv-BPlLQ/exec";
 
     const arabicDays = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
     const ids = [
@@ -1019,7 +1020,7 @@
         academyPrice: 50,
         subscriberPrice: 150,
         coachName: "رجب",
-        scriptUrl: "https://script.google.com/macros/s/AKfycbzSHBgsXP2e14BxcIZKzKiqNm00mqbqB6JeXtvFbIlMe9HT43NgHQIxXL_osyW9Ge78Vw/exec",
+        scriptUrl: DEFAULT_APPS_SCRIPT_URL,
         coachUsername: "coach",
         coachPassword: "1234",
         adminUsername: "admin",
@@ -1031,6 +1032,7 @@
         return {
           ...fallback,
           ...saved,
+          scriptUrl: normalizeSavedScriptUrl(saved.scriptUrl, fallback.scriptUrl),
           coachUsername: saved.coachUsername || fallback.coachUsername,
           coachPassword: saved.coachPassword || fallback.coachPassword,
           adminUsername: saved.adminUsername || fallback.adminUsername,
@@ -1040,6 +1042,21 @@
       } catch {
         return fallback;
       }
+    }
+
+    function normalizeSavedScriptUrl(savedUrl, fallbackUrl) {
+      const url = String(savedUrl || "").trim();
+      if (!url) return fallbackUrl;
+      if (url === fallbackUrl) return url;
+
+      const oldDeploymentIds = [
+        "AKfycbzSHBgsXP2e14BxcIZKzKiqNm00mqbqB6JeXtvFbIlMe9HT43NgHQIxXL_osyW9Ge78Vw",
+        "AKfycbwDS_Tyfac4ToBJ8bHxST0MBpSMrxc3KHISv2ifNNRkgr9qi3JISB11VvddmMENKk_YTw"
+      ];
+      if (oldDeploymentIds.some((id) => url.includes(id))) {
+        return fallbackUrl;
+      }
+      return url;
     }
 
     function loadRecords() {
@@ -1751,6 +1768,8 @@
         const status = await sendToSheet(record);
         if (status === "sent") {
           refreshDashboardAfterSave();
+          await wait(1200);
+          await loadRecordsFromSheet();
         }
         showNotice(status === "sent" ? "تم حفظ اليوم وإرساله إلى Google Sheets." : (existingRecord ? "تم تعديل اليوم واعتماده محليًا." : "تم حفظ اليوم محليًا."), "good");
       } catch {
@@ -2630,6 +2649,12 @@
         if (approveButton) approvePendingDelete(approveButton.dataset.approveDelete);
         if (rejectButton) rejectPendingDelete(rejectButton.dataset.rejectDelete);
       });
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) {
+          loadRecordsFromSheet();
+        }
+      });
+      window.addEventListener("focus", loadRecordsFromSheet);
     }
 
     function init() {
