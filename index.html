@@ -2499,17 +2499,35 @@
         return;
       }
 
-      showNotice("جاري تجهيز ملف Excel في Google Drive...", "good");
+      showNotice("جاري تجهيز ملف Excel للتنزيل المباشر...", "good");
       try {
-        const result = await jsonpSheetAction("createDriveExportUrl");
-        if (!result.ok || !result.driveUrl) {
-          throw new Error(result.message || "drive-url-missing");
+        const result = await jsonpSheetAction("getExcelBase64");
+        if (!result.ok || !result.base64) {
+          throw new Error(result.message || "excel-base64-missing");
         }
-        window.location.href = result.driveUrl;
+        downloadBase64File(result.base64, result.name || "pool-report.xlsx", result.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        showNotice("تم تجهيز ملف Excel للتنزيل.", "good");
       } catch (error) {
-        const separator = settings.scriptUrl.includes("?") ? "&" : "?";
-        window.location.href = `${settings.scriptUrl}${separator}action=downloadSpreadsheet&v=${Date.now()}`;
+        showNotice("تعذر تنزيل الملف مباشرة من هذا الجهاز. جرّب من متصفح Chrome أو من الكمبيوتر.", "bad");
       }
+    }
+
+    function downloadBase64File(base64, fileName, mimeType) {
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index++) {
+        bytes[index] = binary.charCodeAt(index);
+      }
+      const blob = new Blob([bytes], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 3000);
     }
 
     function exportDashboardXlsx() {
