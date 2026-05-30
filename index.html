@@ -1705,32 +1705,13 @@
           .filter(Boolean)
           .sort((a, b) => a.gregorianDate.localeCompare(b.gregorianDate));
 
-        const sheetDates = new Set(sheetRecords.map((record) => record.gregorianDate));
-        const localOnlyRecords = records.filter((record) => record?.gregorianDate && !sheetDates.has(record.gregorianDate));
-        if (localOnlyRecords.length) {
-          await Promise.all(localOnlyRecords.map((record) => sendToSheet(record).catch(() => "failed")));
-          refreshDashboardAfterSave();
-        }
-
-        records = mergeRecordsByDate(sheetRecords, localOnlyRecords);
+        records = sheetRecords;
         saveRecordsToStorage();
         renderRecords();
         recalc();
       } catch (error) {
         console.warn("Unable to load records from Google Sheets", error);
       }
-    }
-
-    function mergeRecordsByDate(primaryRecords, secondaryRecords) {
-      const byDate = new Map();
-      [...(primaryRecords || []), ...(secondaryRecords || [])].forEach((record) => {
-        if (!record?.gregorianDate) return;
-        const existing = byDate.get(record.gregorianDate);
-        if (!existing || Date.parse(record.createdAt || "") > Date.parse(existing.createdAt || "")) {
-          byDate.set(record.gregorianDate, record);
-        }
-      });
-      return Array.from(byDate.values()).sort((a, b) => a.gregorianDate.localeCompare(b.gregorianDate));
     }
 
     async function refreshDashboardAfterSave() {
@@ -1866,6 +1847,8 @@
 
       try {
         await sendToSheet(request.proposedRecord);
+        await wait(1200);
+        await loadRecordsFromSheet();
       } catch {
         showNotice("تم اعتماد التعديل محليًا، لكن تعذر إرساله إلى Google Sheets.", "warn");
         return;
@@ -1965,6 +1948,8 @@
 
       try {
         await sendDeleteToSheet(dates);
+        await wait(1200);
+        await loadRecordsFromSheet();
       } catch {
         // الحذف المحلي هو المعتمد في الواجهة، ولا نعرض تفاصيل الربط للمدرب.
       }
@@ -2683,6 +2668,7 @@
       renderPendingDeletes();
       recalc();
       loadRecordsFromSheet();
+      window.setInterval(loadRecordsFromSheet, 15000);
     }
 
     init();
