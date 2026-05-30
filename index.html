@@ -1599,7 +1599,7 @@
         const timer = window.setTimeout(() => {
           cleanup();
           reject(new Error("انتهت مهلة الاتصال مع Google Apps Script."));
-        }, 18000);
+        }, action === "getExcelBase64" ? 60000 : 18000);
 
         function cleanup() {
           window.clearTimeout(timer);
@@ -2541,7 +2541,13 @@
         await downloadBase64File(result.base64, result.name || "pool-report.xlsx", result.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         showNotice(`تم تجهيز ملف Excel بعدد ${exportRecords.length} سجل حسب النطاق المحدد.`, "good");
       } catch (error) {
-        showNotice("تعذر تنزيل ملف Excel. تأكد من تحديث Apps Script ونشر إصدار جديد ثم جرّب مرة أخرى.", "bad");
+        console.warn("Google Sheets export failed, using local Excel export.", error);
+        try {
+          exportDashboardXlsx();
+          showNotice(`تم تنزيل ملف Excel من النظام مباشرة بعدد ${exportRecords.length} سجل حسب النطاق المحدد.`, "good");
+        } catch (fallbackError) {
+          showNotice(`تعذر تنزيل ملف Excel. سبب الخطأ: ${error.message || "غير معروف"}`, "bad");
+        }
       }
     }
 
@@ -2593,7 +2599,7 @@
 
       if (!exportRecords.length) {
         showNotice("لا توجد بيانات للتصدير.", "warn");
-        return;
+        return false;
       }
 
       const sortedRecords = exportRecords.slice().sort((a, b) => b.gregorianDate.localeCompare(a.gregorianDate));
@@ -2623,8 +2629,13 @@
       link.href = url;
       const rangeName = el.exportAllTime.checked ? "all-time" : `${periodStart || "start"}_${periodEnd || "end"}`;
       link.download = `pool-dashboard-${rangeName}.xlsx`;
+      link.rel = "noopener";
+      link.style.display = "none";
+      document.body.appendChild(link);
       link.click();
-      URL.revokeObjectURL(url);
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 5000);
+      return true;
     }
 
     function wireEvents() {
