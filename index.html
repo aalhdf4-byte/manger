@@ -2499,16 +2499,15 @@
         return;
       }
 
-      showNotice("جاري تجهيز ملف Excel للتنزيل المباشر...", "good");
+      showNotice("جاري حفظ ملف Excel في Google Drive...", "good");
       try {
-        const result = await jsonpSheetAction("getExcelBase64");
-        if (!result.ok || !result.base64) {
-          throw new Error(result.message || "excel-base64-missing");
+        const result = await jsonpSheetAction("createDriveExportUrl");
+        if (!result.ok || !result.driveUrl) {
+          throw new Error(result.message || "drive-export-missing");
         }
-        await downloadBase64File(result.base64, result.name || "pool-report.xlsx", result.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        showNotice("تم تجهيز ملف Excel للتنزيل.", "good");
+        showNotice(`تم حفظ ملف Excel في Google Drive داخل مجلد ${result.folderName || "تقارير المسبح Excel"}.`, "good");
       } catch (error) {
-        showNotice("تعذر تنزيل الملف مباشرة من هذا الجهاز. استخدم خيار الحفظ في الملفات إذا ظهر لك.", "bad");
+        showNotice("تعذر حفظ ملف Excel. تأكد من صلاحيات Apps Script ثم جرّب مرة أخرى.", "bad");
       }
     }
 
