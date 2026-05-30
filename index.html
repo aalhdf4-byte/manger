@@ -2505,20 +2505,33 @@
         if (!result.ok || !result.base64) {
           throw new Error(result.message || "excel-base64-missing");
         }
-        downloadBase64File(result.base64, result.name || "pool-report.xlsx", result.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        await downloadBase64File(result.base64, result.name || "pool-report.xlsx", result.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         showNotice("تم تجهيز ملف Excel للتنزيل.", "good");
       } catch (error) {
-        showNotice("تعذر تنزيل الملف مباشرة من هذا الجهاز. جرّب من متصفح Chrome أو من الكمبيوتر.", "bad");
+        showNotice("تعذر تنزيل الملف مباشرة من هذا الجهاز. استخدم خيار الحفظ في الملفات إذا ظهر لك.", "bad");
       }
     }
 
-    function downloadBase64File(base64, fileName, mimeType) {
+    async function downloadBase64File(base64, fileName, mimeType) {
       const binary = atob(base64);
       const bytes = new Uint8Array(binary.length);
       for (let index = 0; index < binary.length; index++) {
         bytes[index] = binary.charCodeAt(index);
       }
       const blob = new Blob([bytes], { type: mimeType });
+
+      if (navigator.canShare && navigator.share) {
+        const file = new File([blob], fileName, { type: mimeType });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: fileName,
+            text: "ملف تقرير المسبح بصيغة Excel"
+          });
+          return;
+        }
+      }
+
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
