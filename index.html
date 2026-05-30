@@ -2494,25 +2494,22 @@
     }
 
     async function exportGoogleSheetXlsx() {
-      const exportWindow = window.open("about:blank", "_blank");
       if (!settings.scriptUrl || validateAppsScriptUrl(settings.scriptUrl)) {
-        if (exportWindow) exportWindow.close();
         showNotice("أدخل رابط Google Apps Script من لوحة الإدارة قبل التصدير.", "warn");
         return;
       }
 
-      const separator = settings.scriptUrl.includes("?") ? "&" : "?";
-      const downloadUrl = `${settings.scriptUrl}${separator}action=downloadSpreadsheet&v=${Date.now()}`;
-      if (exportWindow) {
-        exportWindow.location.href = downloadUrl;
-      } else {
-        const link = document.createElement("a");
-        link.href = downloadUrl;
-        link.target = "_blank";
-        link.rel = "noopener";
-        link.click();
+      showNotice("جاري تجهيز ملف Excel في Google Drive...", "good");
+      try {
+        const result = await jsonpSheetAction("createDriveExportUrl");
+        if (!result.ok || !result.driveUrl) {
+          throw new Error(result.message || "drive-url-missing");
+        }
+        window.location.href = result.driveUrl;
+      } catch (error) {
+        const separator = settings.scriptUrl.includes("?") ? "&" : "?";
+        window.location.href = `${settings.scriptUrl}${separator}action=downloadSpreadsheet&v=${Date.now()}`;
       }
-      showNotice("تم فتح صفحة تنزيل Google Sheet بصيغة Excel.", "good");
     }
 
     function exportDashboardXlsx() {
