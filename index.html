@@ -2491,6 +2491,11 @@
       const start = el.exportStartDate.value;
       const end = el.exportEndDate.value;
 
+      if (!start || !end) {
+        showNotice("حدد تاريخ البداية وتاريخ النهاية قبل التصدير.", "warn");
+        return null;
+      }
+
       if (start && end && start > end) {
         showNotice("تاريخ البداية يجب أن يكون قبل تاريخ النهاية.", "bad");
         return null;
@@ -2516,14 +2521,25 @@
         return;
       }
 
+      const exportRecords = getExportRecords();
+      if (!exportRecords) return;
+      if (!exportRecords.length) {
+        showNotice("لا توجد بيانات داخل نطاق التاريخ المحدد.", "warn");
+        return;
+      }
+
       showNotice("جاري تجهيز ملف Excel للتنزيل...", "good");
       try {
-        const result = await jsonpSheetAction("getExcelBase64");
+        const result = await jsonpSheetAction("getExcelBase64", {
+          allTime: el.exportAllTime.checked,
+          startDate: el.exportStartDate.value,
+          endDate: el.exportEndDate.value
+        });
         if (!result.ok || !result.base64) {
           throw new Error(result.message || "excel-base64-missing");
         }
         await downloadBase64File(result.base64, result.name || "pool-report.xlsx", result.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        showNotice("تم تجهيز ملف Excel. إذا لم يبدأ التنزيل، افتح التنزيلات أو اختر حفظ الملف من النافذة التي ظهرت.", "good");
+        showNotice(`تم تجهيز ملف Excel بعدد ${exportRecords.length} سجل حسب النطاق المحدد.`, "good");
       } catch (error) {
         showNotice("تعذر تنزيل ملف Excel. تأكد من تحديث Apps Script ونشر إصدار جديد ثم جرّب مرة أخرى.", "bad");
       }
