@@ -2516,16 +2516,21 @@
         return;
       }
 
-      showNotice("جاري حفظ ملف Excel في Google Drive...", "good");
+      showNotice("جاري تجهيز ملف Excel للتنزيل...", "good");
       try {
-        const result = await jsonpSheetAction("createDriveExportUrl");
-        if (!result.ok || !result.driveUrl) {
-          throw new Error(result.message || "drive-export-missing");
+        const result = await jsonpSheetAction("getExcelBase64");
+        if (!result.ok || !result.base64) {
+          throw new Error(result.message || "excel-base64-missing");
         }
-        showNotice(`تم حفظ ملف Excel في Google Drive داخل مجلد ${result.folderName || "تقارير المسبح Excel"}.`, "good");
+        await downloadBase64File(result.base64, result.name || "pool-report.xlsx", result.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        showNotice("تم تجهيز ملف Excel. إذا لم يبدأ التنزيل، افتح التنزيلات أو اختر حفظ الملف من النافذة التي ظهرت.", "good");
       } catch (error) {
-        showNotice("تعذر حفظ ملف Excel. تأكد من صلاحيات Apps Script ثم جرّب مرة أخرى.", "bad");
+        showNotice("تعذر تنزيل ملف Excel. تأكد من تحديث Apps Script ونشر إصدار جديد ثم جرّب مرة أخرى.", "bad");
       }
+    }
+
+    function isIOSLikeDevice() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     }
 
     async function downloadBase64File(base64, fileName, mimeType) {
@@ -2535,6 +2540,20 @@
         bytes[index] = binary.charCodeAt(index);
       }
       const blob = new Blob([bytes], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      link.rel = "noopener";
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      if (!isIOSLikeDevice()) {
+        window.setTimeout(() => URL.revokeObjectURL(url), 5000);
+        return;
+      }
 
       if (navigator.canShare && navigator.share) {
         const file = new File([blob], fileName, { type: mimeType });
@@ -2544,19 +2563,12 @@
             title: fileName,
             text: "ملف تقرير المسبح بصيغة Excel"
           });
+          window.setTimeout(() => URL.revokeObjectURL(url), 5000);
           return;
         }
       }
 
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = fileName;
-      link.style.display = "none";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 3000);
+      window.setTimeout(() => URL.revokeObjectURL(url), 12000);
     }
 
     function exportDashboardXlsx() {
