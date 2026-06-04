@@ -492,6 +492,10 @@
       border-radius: 8px;
     }
 
+    .records.collapsed .panel-body {
+      display: none;
+    }
+
     table {
       width: 100%;
       min-width: 760px;
@@ -920,13 +924,14 @@
       </section>
     </div>
 
-    <section class="panel records">
+    <section class="panel records collapsed" id="recordsPanel">
       <div class="panel-head">
         <div>
           <h2>سجل الأيام المحفوظة</h2>
           <p id="recordCount">0 سجل</p>
         </div>
         <div class="actions">
+          <button class="btn" id="recordsToggleBtn" type="button">عرض السجل</button>
           <label class="switch-row" style="min-height:42px">
             <input id="exportAllTime" type="checkbox" checked>
             جميع الأوقات
@@ -939,7 +944,7 @@
             <label for="exportEndDate">إلى</label>
             <input id="exportEndDate" type="date" disabled>
           </div>
-          <button class="btn" id="exportBtn" type="button">تصدير Google Sheet</button>
+          <button class="btn" id="exportBtn" type="button">تصدير حسب النطاق</button>
           <button class="btn danger" id="deleteSelectedBtn" type="button">طلب حذف المحدد</button>
           <div class="action-status" id="recordsActionStatus" role="status"></div>
         </div>
@@ -976,13 +981,15 @@
       settings: "simple_pool_settings_v1",
       records: "simple_pool_records_v1",
       pendingEdits: "simple_pool_pending_edits_v1",
-      pendingDeletes: "simple_pool_pending_deletes_v1"
+      pendingDeletes: "simple_pool_pending_deletes_v1",
+      recordsExpanded: "simple_pool_records_expanded_v1"
     };
     const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybBwZoXi7qWSyxw_oEnLHvJIHPg1nkCh7Fxo2v6q7JdNh14G4OnZGlYW6Kp-Tv-BPlLQ/exec";
 
     const arabicDays = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
     const ids = [
       "settingsPanel", "settingsBtn", "saveSettingsBtn", "saveBtn", "copyBtn", "exportBtn", "deleteSelectedBtn",
+      "recordsPanel", "recordsToggleBtn",
       "editActionStatus", "recordsActionStatus",
       "loginOverlay", "loginUsername", "loginPassword", "loginBtn",
       "exportAllTime", "exportStartDate", "exportEndDate",
@@ -1007,6 +1014,7 @@
     let pendingDeletes = loadPendingDeletes();
     let editingDate = null;
     let isLoadingRecord = false;
+    let recordsExpanded = localStorage.getItem(STORAGE_KEYS.recordsExpanded) === "true";
 
     function todayISO() {
       const now = new Date();
@@ -1552,6 +1560,19 @@
       if (!target) return;
       target.textContent = "";
       target.classList.remove("show");
+    }
+
+    function updateRecordsVisibility() {
+      if (!el.recordsPanel || !el.recordsToggleBtn) return;
+      el.recordsPanel.classList.toggle("collapsed", !recordsExpanded);
+      el.recordsToggleBtn.textContent = recordsExpanded ? "إخفاء السجل" : "عرض السجل";
+      el.recordsToggleBtn.setAttribute("aria-expanded", String(recordsExpanded));
+    }
+
+    function toggleRecordsVisibility() {
+      recordsExpanded = !recordsExpanded;
+      localStorage.setItem(STORAGE_KEYS.recordsExpanded, String(recordsExpanded));
+      updateRecordsVisibility();
     }
 
     async function copyReport() {
@@ -2523,12 +2544,8 @@
 
       const exportRecords = getExportRecords();
       if (!exportRecords) return;
-      if (!exportRecords.length) {
-        showNotice("لا توجد بيانات داخل نطاق التاريخ المحدد.", "warn");
-        return;
-      }
 
-      showNotice("جاري تجهيز ملف Excel للتنزيل...", "good");
+      showNotice("جاري تجهيز ملف Excel من Google Sheets حسب النطاق المحدد...", "good");
       try {
         const result = await jsonpSheetAction("getExcelBase64", {
           allTime: el.exportAllTime.checked,
@@ -2539,12 +2556,13 @@
           throw new Error(result.message || "excel-base64-missing");
         }
         await downloadBase64File(result.base64, result.name || "pool-report.xlsx", result.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        showNotice(`تم تجهيز ملف Excel بعدد ${exportRecords.length} سجل حسب النطاق المحدد.`, "good");
+        const exportedCount = Number(result.count || 0);
+        showNotice(exportedCount ? `تم تصدير ملف Excel من Google Sheets بعدد ${exportedCount} سجل حسب النطاق المحدد.` : "تم تصدير ملف Excel من Google Sheets حسب النطاق المحدد.", "good");
       } catch (error) {
         console.warn("Google Sheets export failed, using local Excel export.", error);
         try {
           exportDashboardXlsx();
-          showNotice(`تم تنزيل ملف Excel من النظام مباشرة بعدد ${exportRecords.length} سجل حسب النطاق المحدد.`, "good");
+          showNotice(`تعذر تصدير Google Sheets، وتم تنزيل نسخة احتياطية من النظام بعدد ${exportRecords.length} سجل حسب النطاق المحدد.`, "warn");
         } catch (fallbackError) {
           showNotice(`تعذر تنزيل ملف Excel. سبب الخطأ: ${error.message || "غير معروف"}`, "bad");
         }
@@ -2659,6 +2677,7 @@
       });
       el.copyBtn.addEventListener("click", copyReport);
       el.saveBtn.addEventListener("click", saveDay);
+      el.recordsToggleBtn.addEventListener("click", toggleRecordsVisibility);
       el.academyEnabled.addEventListener("change", () => {
         updateOptionalSections();
         recalc();
@@ -2705,6 +2724,7 @@
       renderRecords();
       renderPendingEdits();
       renderPendingDeletes();
+      updateRecordsVisibility();
       recalc();
       loadRecordsFromSheet();
       window.setInterval(loadRecordsFromSheet, 15000);
