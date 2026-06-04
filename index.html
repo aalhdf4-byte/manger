@@ -597,7 +597,6 @@
       </div>
       <div style="margin-top:14px">
         <button class="btn primary" id="loginBtn" type="button">دخول</button>
-        <button class="btn" id="resetLoginBtn" type="button" style="margin-top:10px">استعادة دخول الإدارة</button>
       </div>
     </section>
   </div>
@@ -992,7 +991,7 @@
       "settingsPanel", "settingsBtn", "saveSettingsBtn", "saveBtn", "copyBtn", "exportBtn", "deleteSelectedBtn",
       "recordsPanel", "recordsToggleBtn",
       "editActionStatus", "recordsActionStatus",
-      "loginOverlay", "loginUsername", "loginPassword", "loginBtn", "resetLoginBtn",
+      "loginOverlay", "loginUsername", "loginPassword", "loginBtn",
       "exportAllTime", "exportStartDate", "exportEndDate",
       "visitorPrice", "academyPrice", "subscriberPrice", "coachName", "scriptUrl",
       "coachUsername", "coachPassword", "adminUsername", "adminPassword", "requireLogin",
@@ -1107,18 +1106,18 @@
       localStorage.setItem(STORAGE_KEYS.pendingDeletes, JSON.stringify(pendingDeletes));
     }
 
-    function sharedSettingsPayload() {
+    function sharedSettingsPayload(sourceSettings = settings) {
       return {
-        visitorPrice: settings.visitorPrice,
-        academyPrice: settings.academyPrice,
-        subscriberPrice: settings.subscriberPrice,
-        coachName: settings.coachName,
-        scriptUrl: settings.scriptUrl,
-        coachUsername: settings.coachUsername,
-        coachPassword: settings.coachPassword,
-        adminUsername: settings.adminUsername,
-        adminPassword: settings.adminPassword,
-        requireLogin: settings.requireLogin
+        visitorPrice: sourceSettings.visitorPrice,
+        academyPrice: sourceSettings.academyPrice,
+        subscriberPrice: sourceSettings.subscriberPrice,
+        coachName: sourceSettings.coachName,
+        scriptUrl: sourceSettings.scriptUrl,
+        coachUsername: sourceSettings.coachUsername,
+        coachPassword: sourceSettings.coachPassword,
+        adminUsername: sourceSettings.adminUsername,
+        adminPassword: sourceSettings.adminPassword,
+        requireLogin: sourceSettings.requireLogin
       };
     }
 
@@ -1143,25 +1142,27 @@
 
     async function loadSharedSettings() {
       try {
-        const result = await jsonpSheetAction("getAppSettings");
+        const result = await jsonpSharedSettingsAction("getAppSettings");
         if (result.ok && result.settings) {
           applySharedSettings(result.settings);
           return true;
         }
+        throw new Error(result.message || "تعذر قراءة إعدادات الدخول المركزية.");
       } catch (error) {
         console.warn("Unable to load shared settings", error);
+        loadSharedSettings.lastError = error;
       }
       return false;
     }
 
-    async function saveSharedSettings() {
-      const ping = await jsonpSheetAction("ping");
+    async function saveSharedSettings(nextSettings = settings) {
+      const ping = await jsonpSharedSettingsAction("ping");
       const features = Array.isArray(ping.features) ? ping.features : [];
       if (!features.includes("saveAppSettings")) {
         throw new Error("Apps Script الحالي قديم ولا يدعم حفظ بيانات الدخول المركزية.");
       }
-      const result = await jsonpSheetAction("saveAppSettings", {
-        settings: sharedSettingsPayload()
+      const result = await jsonpSharedSettingsAction("saveAppSettings", {
+        settings: sharedSettingsPayload(nextSettings)
       });
       if (!result.ok) {
         throw new Error(result.message || "shared-settings-save-failed");
@@ -1170,31 +1171,6 @@
         applySharedSettings(result.settings);
       }
       return result;
-    }
-
-    function resetLoginDefaults() {
-      settings = {
-        ...settings,
-        adminUsername: "admin",
-        adminPassword: "1234",
-        coachUsername: "coach",
-        coachPassword: "1234",
-        requireLogin: true
-      };
-      sessionStorage.removeItem("pool_user_role");
-      saveSettingsToStorage();
-      applySettings();
-      el.loginUsername.value = "admin";
-      el.loginPassword.value = "1234";
-      el.loginOverlay.classList.add("show");
-      showNotice("تمت إعادة بيانات الدخول لهذا الجهاز. الإدارة: admin / 1234", "good");
-    }
-
-    function applyLoginRecoveryParam() {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("resetLogin") !== "1") return;
-      resetLoginDefaults();
-      window.history.replaceState({}, document.title, window.location.pathname);
     }
 
     function applySettings() {
@@ -1226,27 +1202,28 @@
         return;
       }
 
-      settings = {
+      const nextSettings = {
+        ...settings,
         visitorPrice: numberValue(el.visitorPrice.value),
         academyPrice: numberValue(el.academyPrice.value),
         subscriberPrice: numberValue(el.subscriberPrice.value),
         coachName: el.coachName.value.trim() || "رجب",
-        scriptUrl,
+        scriptUrl: DEFAULT_APPS_SCRIPT_URL,
         coachUsername: el.coachUsername.value.trim() || "coach",
         coachPassword: el.coachPassword.value || "1234",
         adminUsername: el.adminUsername.value.trim() || "admin",
         adminPassword: el.adminPassword.value || "1234",
         requireLogin: el.requireLogin.checked
       };
-      saveSettingsToStorage();
-      updatePriceLabels();
-      recalc();
+
       try {
-        await saveSharedSettings();
+        await saveSharedSettings(nextSettings);
         applySettings();
+        updatePriceLabels();
+        recalc();
         showNotice("تم حفظ إعدادات الإدارة وتحديثها لجميع الأجهزة.", "good");
       } catch (error) {
-        showNotice(`تم حفظ الإعدادات في هذا الجهاز فقط، لكن تعذر تحديثها لجميع الأجهزة. السبب: ${error.message || "تأكد من رابط Apps Script ونشر آخر إصدار."}`, "warn");
+        showNotice(`لم يتم حفظ الإعدادات. السبب: ${error.message || "تعذر الوصول إلى Google Apps Script."}`, "bad");
       }
     }
 
@@ -1302,7 +1279,11 @@
 
     async function login() {
       settings = loadSettings();
-      await loadSharedSettings();
+      const loaded = await loadSharedSettings();
+      if (!loaded) {
+        showNotice(`تعذر قراءة بيانات الدخول المركزية. السبب: ${loadSharedSettings.lastError?.message || "تعذر الوصول إلى Google Apps Script."}`, "bad");
+        return;
+      }
       const username = el.loginUsername.value.trim();
       const password = el.loginPassword.value;
       if (credentialsMatch(username, password, settings.adminUsername, settings.adminPassword, "admin", "1234")) {
@@ -1724,8 +1705,16 @@
     }
 
     function jsonpSheetAction(action, payload = {}) {
-      if (!settings.scriptUrl) return Promise.resolve({ ok: false, message: "missing-url" });
-      const scriptUrlIssue = validateAppsScriptUrl(settings.scriptUrl);
+      return jsonpActionUrl(settings.scriptUrl, action, payload);
+    }
+
+    function jsonpSharedSettingsAction(action, payload = {}) {
+      return jsonpActionUrl(DEFAULT_APPS_SCRIPT_URL, action, payload);
+    }
+
+    function jsonpActionUrl(url, action, payload = {}) {
+      if (!url) return Promise.resolve({ ok: false, message: "missing-url" });
+      const scriptUrlIssue = validateAppsScriptUrl(url);
       if (scriptUrlIssue) return Promise.reject(new Error(scriptUrlIssue));
 
       return new Promise((resolve, reject) => {
@@ -1755,8 +1744,8 @@
           params.set(key, typeof value === "string" ? value : JSON.stringify(value));
         });
 
-        const separator = settings.scriptUrl.includes("?") ? "&" : "?";
-        script.src = `${settings.scriptUrl}${separator}${params.toString()}`;
+        const separator = url.includes("?") ? "&" : "?";
+        script.src = `${url}${separator}${params.toString()}`;
         script.onerror = () => {
           cleanup();
           reject(new Error("تعذر الوصول إلى Google Apps Script."));
@@ -2789,7 +2778,6 @@
       el.loginPassword.addEventListener("keydown", (event) => {
         if (event.key === "Enter") login();
       });
-      el.resetLoginBtn.addEventListener("click", resetLoginDefaults);
       el.copyBtn.addEventListener("click", copyReport);
       el.saveBtn.addEventListener("click", saveDay);
       el.recordsToggleBtn.addEventListener("click", toggleRecordsVisibility);
@@ -2829,7 +2817,6 @@
     }
 
     function init() {
-      applyLoginRecoveryParam();
       applySettings();
       el.gregorianDate.value = todayISO();
       updateDateFields();
