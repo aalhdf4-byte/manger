@@ -1056,7 +1056,14 @@
     function normalizeSavedScriptUrl(savedUrl, fallbackUrl) {
       const url = String(savedUrl || "").trim();
       if (!url) return fallbackUrl;
-      if (url === fallbackUrl) return url;
+      try {
+        const parsed = new URL(url);
+        if (parsed.hostname === "script.google.com" && parsed.pathname.includes("/macros/s/") && parsed.pathname.endsWith("/exec")) {
+          return url;
+        }
+      } catch {
+        return fallbackUrl;
+      }
       return fallbackUrl;
     }
 
@@ -1146,6 +1153,11 @@
     }
 
     async function saveSharedSettings() {
+      const ping = await jsonpSheetAction("ping");
+      const features = Array.isArray(ping.features) ? ping.features : [];
+      if (!features.includes("saveAppSettings")) {
+        throw new Error("Apps Script الحالي قديم ولا يدعم حفظ بيانات الدخول المركزية.");
+      }
       const result = await jsonpSheetAction("saveAppSettings", {
         settings: sharedSettingsPayload()
       });
@@ -1232,7 +1244,7 @@
         applySettings();
         showNotice("تم حفظ إعدادات الإدارة وتحديثها لجميع الأجهزة.", "good");
       } catch (error) {
-        showNotice("تم حفظ الإعدادات في هذا الجهاز فقط، لكن تعذر تحديثها لجميع الأجهزة. تأكد من رابط Apps Script ونشر آخر إصدار.", "warn");
+        showNotice(`تم حفظ الإعدادات في هذا الجهاز فقط، لكن تعذر تحديثها لجميع الأجهزة. السبب: ${error.message || "تأكد من رابط Apps Script ونشر آخر إصدار."}`, "warn");
       }
     }
 
