@@ -1099,6 +1099,23 @@
       localStorage.setItem(STORAGE_KEYS.pendingDeletes, JSON.stringify(pendingDeletes));
     }
 
+    function applyLoginRecoveryParam() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("resetLogin") !== "1") return;
+      settings = {
+        ...settings,
+        adminUsername: "admin",
+        adminPassword: "1234",
+        coachUsername: "coach",
+        coachPassword: "1234",
+        requireLogin: true
+      };
+      sessionStorage.removeItem("pool_user_role");
+      saveSettingsToStorage();
+      window.history.replaceState({}, document.title, window.location.pathname);
+      showNotice("تمت إعادة بيانات الدخول لهذا الجهاز. الإدارة: admin / 1234", "good");
+    }
+
     function applySettings() {
       el.visitorPrice.value = settings.visitorPrice;
       el.academyPrice.value = settings.academyPrice;
@@ -1174,10 +1191,18 @@
       return sessionStorage.getItem("pool_user_role") === "admin";
     }
 
+    function normalizeCredential(value) {
+      return String(value || "")
+        .normalize("NFKC")
+        .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
+        .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+        .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, "")
+        .trim();
+    }
+
     function credentialsMatch(username, password, savedUsername, savedPassword) {
-      const cleanUsername = String(username || "").trim();
-      const cleanPassword = String(password || "").trim();
-      return cleanUsername === String(savedUsername || "").trim() && cleanPassword === String(savedPassword || "").trim();
+      return normalizeCredential(username) === normalizeCredential(savedUsername)
+        && normalizeCredential(password) === normalizeCredential(savedPassword);
     }
 
     function applyLoginGate() {
@@ -2714,6 +2739,7 @@
     }
 
     function init() {
+      applyLoginRecoveryParam();
       applySettings();
       el.gregorianDate.value = todayISO();
       updateDateFields();
