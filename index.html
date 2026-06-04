@@ -985,7 +985,7 @@
       pendingDeletes: "simple_pool_pending_deletes_v1",
       recordsExpanded: "simple_pool_records_expanded_v1"
     };
-    const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybBwZoXi7qWSyxw_oEnLHvJIHPg1nkCh7Fxo2v6q7JdNh14G4OnZGlYW6Kp-Tv-BPlLQ/exec";
+    const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtml_pV0yRxYRULTd1tLyIA2YRzaIArShe_j4Nz2OHQ5pFW6Ijpt3R01cG1AyFddnO-Q/exec";
 
     const arabicDays = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
     const ids = [
@@ -1058,7 +1058,7 @@
       if (!url) return fallbackUrl;
       try {
         const parsed = new URL(url);
-        if (parsed.hostname === "script.google.com" && parsed.pathname.includes("/macros/s/") && parsed.pathname.endsWith("/exec")) {
+        if (url === fallbackUrl && parsed.hostname === "script.google.com" && parsed.pathname.includes("/macros/s/") && parsed.pathname.endsWith("/exec")) {
           return url;
         }
       } catch {
@@ -1113,6 +1113,7 @@
         academyPrice: settings.academyPrice,
         subscriberPrice: settings.subscriberPrice,
         coachName: settings.coachName,
+        scriptUrl: settings.scriptUrl,
         coachUsername: settings.coachUsername,
         coachPassword: settings.coachPassword,
         adminUsername: settings.adminUsername,
@@ -1129,6 +1130,7 @@
         academyPrice: Number(sharedSettings.academyPrice || settings.academyPrice),
         subscriberPrice: Number(sharedSettings.subscriberPrice || settings.subscriberPrice),
         coachName: sharedSettings.coachName || settings.coachName,
+        scriptUrl: normalizeSavedScriptUrl(sharedSettings.scriptUrl || settings.scriptUrl, DEFAULT_APPS_SCRIPT_URL),
         coachUsername: sharedSettings.coachUsername || settings.coachUsername,
         coachPassword: sharedSettings.coachPassword || settings.coachPassword,
         adminUsername: sharedSettings.adminUsername || settings.adminUsername,
