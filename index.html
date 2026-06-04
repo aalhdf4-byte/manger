@@ -597,6 +597,7 @@
       </div>
       <div style="margin-top:14px">
         <button class="btn primary" id="loginBtn" type="button">دخول</button>
+        <button class="btn" id="resetLoginBtn" type="button" style="margin-top:10px">استعادة دخول الإدارة</button>
       </div>
     </section>
   </div>
@@ -991,7 +992,7 @@
       "settingsPanel", "settingsBtn", "saveSettingsBtn", "saveBtn", "copyBtn", "exportBtn", "deleteSelectedBtn",
       "recordsPanel", "recordsToggleBtn",
       "editActionStatus", "recordsActionStatus",
-      "loginOverlay", "loginUsername", "loginPassword", "loginBtn",
+      "loginOverlay", "loginUsername", "loginPassword", "loginBtn", "resetLoginBtn",
       "exportAllTime", "exportStartDate", "exportEndDate",
       "visitorPrice", "academyPrice", "subscriberPrice", "coachName", "scriptUrl",
       "coachUsername", "coachPassword", "adminUsername", "adminPassword", "requireLogin",
@@ -1099,9 +1100,7 @@
       localStorage.setItem(STORAGE_KEYS.pendingDeletes, JSON.stringify(pendingDeletes));
     }
 
-    function applyLoginRecoveryParam() {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("resetLogin") !== "1") return;
+    function resetLoginDefaults() {
       settings = {
         ...settings,
         adminUsername: "admin",
@@ -1112,8 +1111,18 @@
       };
       sessionStorage.removeItem("pool_user_role");
       saveSettingsToStorage();
-      window.history.replaceState({}, document.title, window.location.pathname);
+      applySettings();
+      el.loginUsername.value = "admin";
+      el.loginPassword.value = "1234";
+      el.loginOverlay.classList.add("show");
       showNotice("تمت إعادة بيانات الدخول لهذا الجهاز. الإدارة: admin / 1234", "good");
+    }
+
+    function applyLoginRecoveryParam() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("resetLogin") !== "1") return;
+      resetLoginDefaults();
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
 
     function applySettings() {
@@ -1214,6 +1223,7 @@
     }
 
     function login() {
+      settings = loadSettings();
       const username = el.loginUsername.value.trim();
       const password = el.loginPassword.value;
       if (credentialsMatch(username, password, settings.adminUsername, settings.adminPassword, "admin", "1234")) {
@@ -2700,6 +2710,7 @@
       el.loginPassword.addEventListener("keydown", (event) => {
         if (event.key === "Enter") login();
       });
+      el.resetLoginBtn.addEventListener("click", resetLoginDefaults);
       el.copyBtn.addEventListener("click", copyReport);
       el.saveBtn.addEventListener("click", saveDay);
       el.recordsToggleBtn.addEventListener("click", toggleRecordsVisibility);
