@@ -1100,6 +1100,64 @@
       localStorage.setItem(STORAGE_KEYS.pendingDeletes, JSON.stringify(pendingDeletes));
     }
 
+    function sharedSettingsPayload() {
+      return {
+        visitorPrice: settings.visitorPrice,
+        academyPrice: settings.academyPrice,
+        subscriberPrice: settings.subscriberPrice,
+        coachName: settings.coachName,
+        coachUsername: settings.coachUsername,
+        coachPassword: settings.coachPassword,
+        adminUsername: settings.adminUsername,
+        adminPassword: settings.adminPassword,
+        requireLogin: settings.requireLogin
+      };
+    }
+
+    function applySharedSettings(sharedSettings) {
+      if (!sharedSettings) return false;
+      settings = {
+        ...settings,
+        visitorPrice: Number(sharedSettings.visitorPrice || settings.visitorPrice),
+        academyPrice: Number(sharedSettings.academyPrice || settings.academyPrice),
+        subscriberPrice: Number(sharedSettings.subscriberPrice || settings.subscriberPrice),
+        coachName: sharedSettings.coachName || settings.coachName,
+        coachUsername: sharedSettings.coachUsername || settings.coachUsername,
+        coachPassword: sharedSettings.coachPassword || settings.coachPassword,
+        adminUsername: sharedSettings.adminUsername || settings.adminUsername,
+        adminPassword: sharedSettings.adminPassword || settings.adminPassword,
+        requireLogin: typeof sharedSettings.requireLogin === "boolean" ? sharedSettings.requireLogin : settings.requireLogin
+      };
+      saveSettingsToStorage();
+      return true;
+    }
+
+    async function loadSharedSettings() {
+      try {
+        const result = await jsonpSheetAction("getAppSettings");
+        if (result.ok && result.settings) {
+          applySharedSettings(result.settings);
+          return true;
+        }
+      } catch (error) {
+        console.warn("Unable to load shared settings", error);
+      }
+      return false;
+    }
+
+    async function saveSharedSettings() {
+      const result = await jsonpSheetAction("saveAppSettings", {
+        settings: sharedSettingsPayload()
+      });
+      if (!result.ok) {
+        throw new Error(result.message || "shared-settings-save-failed");
+      }
+      if (result.settings) {
+        applySharedSettings(result.settings);
+      }
+      return result;
+    }
+
     function resetLoginDefaults() {
       settings = {
         ...settings,
@@ -1139,7 +1197,7 @@
       updatePriceLabels();
     }
 
-    function saveSettings() {
+    async function saveSettings() {
       if (!isAdminLoggedIn()) {
         openAdminLogin();
         showNotice("يلزم دخول الإدارة لحفظ الإعدادات.", "warn");
@@ -1169,7 +1227,13 @@
       saveSettingsToStorage();
       updatePriceLabels();
       recalc();
-      showNotice("تم حفظ الإعدادات.", "good");
+      try {
+        await saveSharedSettings();
+        applySettings();
+        showNotice("تم حفظ إعدادات الإدارة وتحديثها لجميع الأجهزة.", "good");
+      } catch (error) {
+        showNotice("تم حفظ الإعدادات في هذا الجهاز فقط، لكن تعذر تحديثها لجميع الأجهزة. تأكد من رابط Apps Script ونشر آخر إصدار.", "warn");
+      }
     }
 
     function validateAppsScriptUrl(url) {
@@ -1222,8 +1286,9 @@
       }
     }
 
-    function login() {
+    async function login() {
       settings = loadSettings();
+      await loadSharedSettings();
       const username = el.loginUsername.value.trim();
       const password = el.loginPassword.value;
       if (credentialsMatch(username, password, settings.adminUsername, settings.adminPassword, "admin", "1234")) {
@@ -2763,6 +2828,12 @@
       renderPendingDeletes();
       updateRecordsVisibility();
       recalc();
+      loadSharedSettings().then((loaded) => {
+        if (loaded) {
+          applySettings();
+          applyLoginGate();
+        }
+      });
       loadRecordsFromSheet();
       window.setInterval(loadRecordsFromSheet, 15000);
     }
