@@ -1279,29 +1279,34 @@
 
     async function login() {
       settings = loadSettings();
+      showNotice("جاري التحقق من بيانات الدخول...", "warn");
       const loaded = await loadSharedSettings();
       if (!loaded) {
-        showNotice(`تعذر قراءة بيانات الدخول المركزية. السبب: ${loadSharedSettings.lastError?.message || "تعذر الوصول إلى Google Apps Script."}`, "bad");
-        return;
+        showNotice(`تعذر قراءة بيانات الدخول المركزية. سيتم استخدام بيانات الدخول الاحتياطية مؤقتا. السبب: ${loadSharedSettings.lastError?.message || "تعذر الوصول إلى Google Apps Script."}`, "warn");
       }
       const username = el.loginUsername.value.trim();
       const password = el.loginPassword.value;
-      if (credentialsMatch(username, password, settings.adminUsername, settings.adminPassword, "admin", "1234")) {
+      const adminMatched = credentialsMatch(username, password, settings.adminUsername, settings.adminPassword)
+        || (!loaded && credentialsMatch(username, password, "admin", "1234"));
+      const coachMatched = credentialsMatch(username, password, settings.coachUsername, settings.coachPassword)
+        || (!loaded && credentialsMatch(username, password, "coach", "1234"));
+
+      if (adminMatched) {
         sessionStorage.setItem("pool_user_role", "admin");
         el.loginOverlay.classList.remove("show");
         el.settingsPanel.classList.add("show");
         el.loginUsername.value = "";
         el.loginPassword.value = "";
-        showNotice("تم دخول الإدارة.", "good");
+        showNotice(loaded ? "تم دخول الإدارة." : "تم دخول الإدارة ببيانات احتياطية. تأكد لاحقا من رابط Apps Script.", "good");
         return;
       }
-      if (credentialsMatch(username, password, settings.coachUsername, settings.coachPassword, "coach", "1234")) {
+      if (coachMatched) {
         sessionStorage.setItem("pool_user_role", "coach");
         el.loginOverlay.classList.remove("show");
         el.settingsPanel.classList.remove("show");
         el.loginUsername.value = "";
         el.loginPassword.value = "";
-        showNotice("تم تسجيل الدخول.", "good");
+        showNotice(loaded ? "تم تسجيل الدخول." : "تم تسجيل الدخول ببيانات احتياطية. تأكد لاحقا من رابط Apps Script.", "good");
         return;
       }
       showNotice("اسم المستخدم أو كلمة المرور غير صحيحة.", "bad");
