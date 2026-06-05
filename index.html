@@ -1298,6 +1298,7 @@
         el.loginUsername.value = "";
         el.loginPassword.value = "";
         showNotice(loaded ? "تم دخول الإدارة." : "تم دخول الإدارة ببيانات احتياطية. تأكد لاحقا من رابط Apps Script.", "good");
+        loadRecordsFromSheet();
         return;
       }
       if (coachMatched) {
@@ -1307,6 +1308,7 @@
         el.loginUsername.value = "";
         el.loginPassword.value = "";
         showNotice(loaded ? "تم تسجيل الدخول." : "تم تسجيل الدخول ببيانات احتياطية. تأكد لاحقا من رابط Apps Script.", "good");
+        loadRecordsFromSheet();
         return;
       }
       showNotice("اسم المستخدم أو كلمة المرور غير صحيحة.", "bad");
@@ -1689,10 +1691,10 @@
     }
 
     async function sendToSheet(record) {
-      if (!settings.scriptUrl) return "local-only";
-      const scriptUrlIssue = validateAppsScriptUrl(settings.scriptUrl);
+      const sheetUrl = DEFAULT_APPS_SCRIPT_URL;
+      const scriptUrlIssue = validateAppsScriptUrl(sheetUrl);
       if (scriptUrlIssue) throw new Error(scriptUrlIssue);
-      await fetch(settings.scriptUrl, {
+      await fetch(sheetUrl, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -1710,7 +1712,7 @@
     }
 
     function jsonpSheetAction(action, payload = {}) {
-      return jsonpActionUrl(settings.scriptUrl, action, payload);
+      return jsonpActionUrl(DEFAULT_APPS_SCRIPT_URL, action, payload);
     }
 
     function jsonpSharedSettingsAction(action, payload = {}) {
@@ -1760,8 +1762,10 @@
     }
 
     async function postSheetAction(action, payload = {}) {
-      if (!settings.scriptUrl) return "local-only";
-      await fetch(settings.scriptUrl, {
+      const sheetUrl = DEFAULT_APPS_SCRIPT_URL;
+      const scriptUrlIssue = validateAppsScriptUrl(sheetUrl);
+      if (scriptUrlIssue) throw new Error(scriptUrlIssue);
+      await fetch(sheetUrl, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -1771,7 +1775,6 @@
     }
 
     async function sendDeleteToSheet(dates) {
-      if (!settings.scriptUrl) return "local-only";
       try {
         const result = await jsonpSheetAction("deleteDailyRecords", { dates });
         if (!result.ok) throw new Error(result.message || "delete-failed");
@@ -1825,7 +1828,7 @@
     }
 
     async function loadRecordsFromSheet() {
-      if (!settings.scriptUrl || validateAppsScriptUrl(settings.scriptUrl)) return;
+      if (validateAppsScriptUrl(DEFAULT_APPS_SCRIPT_URL)) return;
       try {
         const result = await jsonpSheetAction("getRecords");
         if (!result.ok || !Array.isArray(result.records)) return;
@@ -1844,7 +1847,7 @@
     }
 
     async function refreshDashboardAfterSave() {
-      if (!settings.scriptUrl || validateAppsScriptUrl(settings.scriptUrl)) return;
+      if (validateAppsScriptUrl(DEFAULT_APPS_SCRIPT_URL)) return;
       try {
         await wait(1500);
         await jsonpSheetAction("refreshDashboard");
@@ -2645,8 +2648,8 @@
     }
 
     async function exportGoogleSheetXlsx() {
-      if (!settings.scriptUrl || validateAppsScriptUrl(settings.scriptUrl)) {
-        showNotice("أدخل رابط Google Apps Script من لوحة الإدارة قبل التصدير.", "warn");
+      if (validateAppsScriptUrl(DEFAULT_APPS_SCRIPT_URL)) {
+        showNotice("تعذر تجهيز رابط Google Apps Script المركزي.", "warn");
         return;
       }
 
