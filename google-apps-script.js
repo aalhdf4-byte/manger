@@ -35,7 +35,162 @@ const HEADER = [
 const DASHBOARD_SHEET_NAME = "صفحة الداش بورد";
 const SPREADSHEET_URL = "ضع رابط Google Sheet كامل هنا";
 const SPREADSHEET_ID = "";
-const SCRIPT_VERSION = "2026-05-30-dashboard-pro-v2";
+const EXPORT_FOLDER_NAME = "تقارير المسبح Excel";
+const SHARED_SETTINGS_KEY = "POOL_MANAGEMENT_SHARED_SETTINGS_V1";
+const SETTINGS_SHEET_NAME = "إعدادات النظام";
+const SETTINGS_HEADER = ["Key", "Value"];
+const CANONICAL_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwtml_pV0yRxYRULTd1tLyIA2YRzaIArShe_j4Nz2OHQ5pFW6Ijpt3R01cG1AyFddnO-Q/exec";
+const SCRIPT_VERSION = "2026-06-05-sheet-settings-login-v1";
+
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu("تصدير المسبح")
+    .addItem("تصدير حسب التاريخ", "showExportSidebar")
+    .addSeparator()
+    .addItem("تحديث الداش بورد", "manualRefreshDashboardFromMenu")
+    .addToUi();
+}
+
+function manualRefreshDashboardFromMenu() {
+  const result = manualRefreshDashboard();
+  SpreadsheetApp.getUi().alert(result.ok ? "تم تحديث صفحة الداش بورد." : "تعذر تحديث الداش بورد: " + result.message);
+}
+
+function showExportSidebar() {
+  const html = HtmlService
+    .createHtmlOutput(getExportSidebarHtml())
+    .setTitle("تصدير حسب التاريخ");
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function getExportSidebarHtml() {
+  return `<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <base target="_top">
+  <style>
+    body{font-family:Arial,Tahoma,sans-serif;margin:0;padding:16px;background:#f7f9fb;color:#10222a;direction:rtl}
+    h2{margin:0 0 8px;font-size:20px}
+    p{margin:0 0 14px;color:#52656b;line-height:1.7}
+    label{display:block;margin:12px 0 6px;font-weight:700}
+    input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #d8e4ea;border-radius:8px;font:inherit}
+    .check{display:flex;align-items:center;gap:8px;margin:12px 0;font-weight:700}
+    .check input{width:auto}
+    button,a{display:block;width:100%;box-sizing:border-box;margin-top:12px;padding:13px 16px;border-radius:8px;border:0;font:inherit;font-weight:700;text-align:center;text-decoration:none}
+    button{background:#2f7c86;color:#fff;cursor:pointer}
+    button:disabled{opacity:.65;cursor:wait}
+    a{background:#eef4f8;color:#10222a;border:1px solid #d8e4ea}
+    .msg{display:none;margin-top:12px;padding:12px;border-radius:8px;line-height:1.7}
+    .msg.show{display:block}
+    .good{background:#eef8f1;color:#17613a;border:1px solid #bfe5cb}
+    .bad{background:#fff0f0;color:#a61b1b;border:1px solid #f0c2c2}
+  </style>
+</head>
+<body>
+  <h2>تصدير تقرير المسبح</h2>
+  <p>حدد النطاق المطلوب من بيانات Google Sheets ثم اضغط تصدير.</p>
+  <label class="check"><input id="allTime" type="checkbox" checked> جميع الأوقات</label>
+  <label for="startDate">تاريخ البداية</label>
+  <input id="startDate" type="date" disabled>
+  <label for="endDate">تاريخ النهاية</label>
+  <input id="endDate" type="date" disabled>
+  <button id="exportBtn" type="button">تصدير Excel</button>
+  <div id="message" class="msg"></div>
+  <div id="linkWrap"></div>
+  <script>
+    const allTime = document.getElementById("allTime");
+    const startDate = document.getElementById("startDate");
+    const endDate = document.getElementById("endDate");
+    const exportBtn = document.getElementById("exportBtn");
+    const message = document.getElementById("message");
+    const linkWrap = document.getElementById("linkWrap");
+
+    function setMessage(text, type) {
+      message.textContent = text;
+      message.className = "msg show " + type;
+    }
+
+    function updateDates() {
+      startDate.disabled = allTime.checked;
+      endDate.disabled = allTime.checked;
+    }
+
+    allTime.addEventListener("change", updateDates);
+    exportBtn.addEventListener("click", () => {
+      linkWrap.innerHTML = "";
+      if (!allTime.checked && (!startDate.value || !endDate.value)) {
+        setMessage("حدد تاريخ البداية والنهاية قبل التصدير.", "bad");
+        return;
+      }
+      if (!allTime.checked && startDate.value > endDate.value) {
+        setMessage("تاريخ البداية يجب أن يكون قبل تاريخ النهاية.", "bad");
+        return;
+      }
+      exportBtn.disabled = true;
+      setMessage("جاري تجهيز ملف Excel من Google Sheets...", "good");
+      google.script.run
+        .withSuccessHandler((result) => {
+          exportBtn.disabled = false;
+          if (!result || !result.ok) {
+            setMessage(result && result.message ? result.message : "تعذر تجهيز ملف Excel.", "bad");
+            return;
+          }
+          setMessage("تم تجهيز ملف Excel بعدد " + result.count + " سجل.", "good");
+          const link = document.createElement("a");
+          link.href = result.directDownloadUrl;
+          link.target = "_blank";
+          link.rel = "noopener";
+          link.textContent = "تنزيل ملف Excel";
+          linkWrap.appendChild(link);
+          link.click();
+        })
+        .withFailureHandler((error) => {
+          exportBtn.disabled = false;
+          setMessage(error && error.message ? error.message : "تعذر تجهيز ملف Excel.", "bad");
+        })
+        .exportRangeFromSheetUi({
+          allTime: allTime.checked,
+          startDate: startDate.value,
+          endDate: endDate.value
+        });
+    });
+    updateDates();
+  </script>
+</body>
+</html>`;
+}
+
+function exportRangeFromSheetUi(options) {
+  const spreadsheet = getSpreadsheet();
+  const exportOptions = getExportOptions(options || {});
+  if (!exportOptions.allTime) {
+    if (!exportOptions.startDate || !exportOptions.endDate) {
+      return { ok: false, message: "حدد تاريخ البداية والنهاية قبل التصدير." };
+    }
+    if (exportOptions.startDate > exportOptions.endDate) {
+      return { ok: false, message: "تاريخ البداية يجب أن يكون قبل تاريخ النهاية." };
+    }
+  }
+
+  const records = exportOptions.allTime
+    ? collectRecords(spreadsheet)
+    : filterRecordsForExport(collectRecords(spreadsheet), exportOptions);
+  if (!records.length) {
+    return { ok: false, message: "لا توجد بيانات داخل النطاق المحدد." };
+  }
+
+  const exportFile = createExcelDriveFile(spreadsheet, exportOptions);
+  return {
+    ok: true,
+    name: exportFile.name,
+    count: exportFile.count || records.length,
+    periodStart: exportFile.periodStart || records[0].gregorianDate,
+    periodEnd: exportFile.periodEnd || records[records.length - 1].gregorianDate,
+    driveUrl: exportFile.driveUrl,
+    directDownloadUrl: exportFile.directDownloadUrl
+  };
+}
 
 function getSpreadsheet() {
   const url = String(SPREADSHEET_URL || "").trim();
@@ -56,8 +211,125 @@ function getSpreadsheet() {
 
 function manualRefreshDashboard() {
   const spreadsheet = getSpreadsheet();
-  const dashboard = refreshDashboardSafely(spreadsheet);
+  const dashboard = refreshDashboardSafely(spreadsheet, null, "تحديث يدوي");
   return { ok: dashboard.ok, dashboard: DASHBOARD_SHEET_NAME, version: SCRIPT_VERSION, message: dashboard.message || "" };
+}
+
+function defaultAppSettings() {
+  return {
+    visitorPrice: 15,
+    academyPrice: 50,
+    subscriberPrice: 150,
+    coachName: "رجب",
+    scriptUrl: CANONICAL_WEB_APP_URL,
+    coachUsername: "coach",
+    coachPassword: "1234",
+    adminUsername: "admin",
+    adminPassword: "1234",
+    requireLogin: true
+  };
+}
+
+function cleanAppSettings(input) {
+  const fallback = defaultAppSettings();
+  const source = input || {};
+  return {
+    visitorPrice: numberOrZero(source.visitorPrice) || fallback.visitorPrice,
+    academyPrice: numberOrZero(source.academyPrice) || fallback.academyPrice,
+    subscriberPrice: numberOrZero(source.subscriberPrice) || fallback.subscriberPrice,
+    coachName: String(source.coachName || fallback.coachName).trim() || fallback.coachName,
+    scriptUrl: String(source.scriptUrl || fallback.scriptUrl).trim() || fallback.scriptUrl,
+    coachUsername: String(source.coachUsername || fallback.coachUsername).trim() || fallback.coachUsername,
+    coachPassword: String(source.coachPassword || fallback.coachPassword),
+    adminUsername: String(source.adminUsername || fallback.adminUsername).trim() || fallback.adminUsername,
+    adminPassword: String(source.adminPassword || fallback.adminPassword),
+    requireLogin: typeof source.requireLogin === "boolean" ? source.requireLogin : fallback.requireLogin
+  };
+}
+
+function getOrCreateSettingsSheet(spreadsheet) {
+  let sheet = spreadsheet.getSheetByName(SETTINGS_SHEET_NAME);
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(SETTINGS_SHEET_NAME);
+  }
+
+  if (sheet.getLastRow() === 0) {
+    sheet.getRange(1, 1, 1, SETTINGS_HEADER.length).setValues([SETTINGS_HEADER]);
+    sheet.setFrozenRows(1);
+  } else {
+    sheet.getRange(1, 1, 1, SETTINGS_HEADER.length).setValues([SETTINGS_HEADER]);
+  }
+
+  try {
+    sheet.setRightToLeft(true);
+  } catch (error) {}
+
+  try {
+    sheet.hideSheet();
+  } catch (error) {}
+
+  return sheet;
+}
+
+function readSettingsFromSheet(spreadsheet) {
+  const sheet = getOrCreateSettingsSheet(spreadsheet);
+  if (sheet.getLastRow() < 2) return {};
+
+  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 2).getValues();
+  const settings = {};
+  rows.forEach((row) => {
+    const key = String(row[0] || "").trim();
+    if (!key) return;
+    settings[key] = row[1];
+  });
+  return settings;
+}
+
+function writeSettingsToSheet(spreadsheet, settings) {
+  const sheet = getOrCreateSettingsSheet(spreadsheet);
+  if (sheet.getLastRow() > 1) {
+    sheet.getRange(2, 1, sheet.getLastRow() - 1, 2).clearContent();
+  }
+
+  const rows = Object.keys(settings).map((key) => [key, settings[key]]);
+  if (rows.length) {
+    sheet.getRange(2, 1, rows.length, 2).setValues(rows);
+  }
+
+  sheet.autoResizeColumns(1, SETTINGS_HEADER.length);
+  try {
+    sheet.hideSheet();
+  } catch (error) {}
+}
+
+function getAppSettings() {
+  const spreadsheet = getSpreadsheet();
+  let saved = readSettingsFromSheet(spreadsheet);
+  if (!Object.keys(saved).length) saved = defaultAppSettings();
+
+  const clean = cleanAppSettings(saved);
+  writeSettingsToSheet(spreadsheet, clean);
+  PropertiesService.getScriptProperties().setProperty(SHARED_SETTINGS_KEY, JSON.stringify(clean));
+
+  return {
+    ok: true,
+    version: SCRIPT_VERSION,
+    source: "sheet",
+    settings: clean
+  };
+}
+
+function saveAppSettings(settings) {
+  const spreadsheet = getSpreadsheet();
+  const clean = cleanAppSettings(settings || {});
+  writeSettingsToSheet(spreadsheet, clean);
+  PropertiesService.getScriptProperties().setProperty(SHARED_SETTINGS_KEY, JSON.stringify(clean));
+  return {
+    ok: true,
+    version: SCRIPT_VERSION,
+    source: "sheet",
+    settings: clean
+  };
 }
 
 function doPost(e) {
@@ -77,8 +349,16 @@ function doPost(e) {
 
     if (payload.action === "refreshDashboard") {
       const spreadsheet = getSpreadsheet();
-      const dashboard = refreshDashboardSafely(spreadsheet);
+      const dashboard = refreshDashboardSafely(spreadsheet, null, "تحديث من الرابط");
       return jsonResponse({ ok: dashboard.ok, dashboard: DASHBOARD_SHEET_NAME, version: SCRIPT_VERSION, message: dashboard.message || "" });
+    }
+
+    if (payload.action === "getAppSettings") {
+      return jsonResponse(getAppSettings());
+    }
+
+    if (payload.action === "saveAppSettings") {
+      return jsonResponse(saveAppSettings(payload.settings || {}));
     }
 
     if (payload.action !== "appendDailyRecord" || !payload.record) {
@@ -94,7 +374,10 @@ function doPost(e) {
     sheet.appendRow(toRow(record));
     autoResize(sheet);
     SpreadsheetApp.flush();
-    const dashboard = refreshDashboardSafely(spreadsheet);
+    Utilities.sleep(700);
+    const dashboardRecord = normalizeDashboardRecord(record);
+    const dashboardRecords = mergeRecordsForDashboard(collectRecords(spreadsheet), dashboardRecord);
+    const dashboard = refreshDashboardSafely(spreadsheet, dashboardRecords, "آخر حفظ: " + (dashboardRecord.gregorianDate || ""));
 
     return jsonResponse({ ok: true, sheet: sheetName, dashboard: dashboard });
   } catch (error) {
@@ -108,11 +391,15 @@ function doGet(e) {
     const action = params.action || "ping";
     let result;
 
+    if (action === "downloadSpreadsheet") {
+      return downloadSpreadsheet();
+    }
+
     if (action === "ping") {
       result = {
         ok: true,
         version: SCRIPT_VERSION,
-        features: ["appendDailyRecord", "deleteDailyRecords", "syncRecords", "getRecords", "refreshDashboard", "dashboard"]
+        features: ["appendDailyRecord", "deleteDailyRecords", "syncRecords", "getRecords", "refreshDashboard", "getSpreadsheetExportUrl", "createDriveExportUrl", "getExcelBase64", "downloadSpreadsheet", "dashboard", "getAppSettings", "saveAppSettings"]
       };
     } else if (action === "deleteDailyRecords") {
       result = deleteDailyRecords(parseJsonParam(params.dates, []));
@@ -122,8 +409,18 @@ function doGet(e) {
       result = getRecords();
     } else if (action === "refreshDashboard") {
       const spreadsheet = getSpreadsheet();
-      const dashboard = refreshDashboardSafely(spreadsheet);
+      const dashboard = refreshDashboardSafely(spreadsheet, null, "تحديث من الرابط");
       result = { ok: dashboard.ok, dashboard: DASHBOARD_SHEET_NAME, version: SCRIPT_VERSION, message: dashboard.message || "" };
+    } else if (action === "getSpreadsheetExportUrl") {
+      result = getSpreadsheetExportUrl();
+    } else if (action === "createDriveExportUrl") {
+      result = createDriveExportUrl();
+    } else if (action === "getExcelBase64") {
+      result = getExcelBase64(params);
+    } else if (action === "getAppSettings") {
+      result = getAppSettings();
+    } else if (action === "saveAppSettings") {
+      result = saveAppSettings(parseJsonParam(params.settings, {}));
     } else {
       result = { ok: false, message: "Unsupported action" };
     }
@@ -132,6 +429,222 @@ function doGet(e) {
   } catch (error) {
     return jsonResponse({ ok: false, message: error.message }, e && e.parameter ? e.parameter.callback : "");
   }
+}
+
+function downloadSpreadsheet() {
+  const spreadsheet = getSpreadsheet();
+  const exportFile = createExcelDriveFile(spreadsheet);
+  const base64 = Utilities.base64Encode(exportFile.blob.getBytes());
+  const html = [
+    '<!doctype html>',
+    '<html lang="ar" dir="rtl">',
+    '<head>',
+    '<meta charset="utf-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    '<title>تنزيل ملف Excel</title>',
+    '<style>body{font-family:Arial,Tahoma,sans-serif;text-align:center;padding:32px;direction:rtl;color:#10222a;background:#f7f9fb}main{max-width:520px;margin:auto;background:#fff;border:1px solid #d8e4ea;border-radius:14px;padding:24px}a,button{display:block;width:100%;box-sizing:border-box;margin:10px 0;font:inherit;font-weight:700;padding:14px 18px;border:0;border-radius:10px;text-decoration:none}button{background:#2f7c86;color:#fff}a.primary{background:#2f7c86;color:#fff}a.secondary{background:#eef4f8;color:#10222a}p{line-height:1.8;color:#52656b}</style>',
+    '</head>',
+    '<body>',
+    '<main>',
+    '<h2>تم تجهيز ملف Excel</h2>',
+    '<p>على الجوال الأفضل فتح الملف من Google Drive، وبعدها اختر تنزيل أو مشاركة حسب جهازك.</p>',
+    '<a class="primary" href="' + exportFile.driveUrl + '" target="_blank" rel="noopener">فتح ملف Excel في Google Drive</a>',
+    '<a class="secondary" href="' + exportFile.directDownloadUrl + '" target="_blank" rel="noopener">محاولة تنزيل مباشر</a>',
+    '<button id="downloadBtn" type="button">تنزيل من هذه الصفحة</button>',
+    '<p>تم حفظ نسخة Excel في Google Drive باسم: ' + exportFile.name + '</p>',
+    '</main>',
+    '<script>',
+    'const base64 = "' + base64 + '";',
+    'const fileName = ' + JSON.stringify(exportFile.name) + ';',
+    'function downloadFile(){',
+    '  const binary = atob(base64);',
+    '  const bytes = new Uint8Array(binary.length);',
+    '  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);',
+    '  const blob = new Blob([bytes], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});',
+    '  const url = URL.createObjectURL(blob);',
+    '  const link = document.createElement("a");',
+    '  link.href = url;',
+    '  link.download = fileName;',
+    '  document.body.appendChild(link);',
+    '  link.click();',
+    '  link.remove();',
+    '  setTimeout(() => URL.revokeObjectURL(url), 3000);',
+    '}',
+    'document.getElementById("downloadBtn").addEventListener("click", downloadFile);',
+    'downloadFile();',
+    '</script>',
+    '</body>',
+    '</html>'
+  ].join("");
+
+  return HtmlService.createHtmlOutput(html)
+    .setTitle("تنزيل ملف Excel")
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function createDriveExportUrl() {
+  const spreadsheet = getSpreadsheet();
+  const exportFile = createExcelDriveFile(spreadsheet);
+  return {
+    ok: true,
+    name: exportFile.name,
+    folderName: EXPORT_FOLDER_NAME,
+    driveUrl: exportFile.driveUrl,
+    directDownloadUrl: exportFile.directDownloadUrl
+  };
+}
+
+function getExcelBase64(params) {
+  const spreadsheet = getSpreadsheet();
+  const exportFile = createExcelExport(spreadsheet, getExportOptions(params || {}));
+  return {
+    ok: true,
+    name: exportFile.name,
+    count: exportFile.count,
+    periodStart: exportFile.periodStart,
+    periodEnd: exportFile.periodEnd,
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    base64: Utilities.base64Encode(exportFile.blob.getBytes())
+  };
+}
+
+function createExcelDriveFile(spreadsheet, options) {
+  const exportFile = createExcelExport(spreadsheet, options || getExportOptions({}));
+  const excelBlob = exportFile.blob;
+  const folder = getOrCreateExportFolder();
+  const driveFile = folder.createFile(excelBlob);
+  driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  return {
+    name: exportFile.name,
+    blob: excelBlob,
+    count: exportFile.count,
+    periodStart: exportFile.periodStart,
+    periodEnd: exportFile.periodEnd,
+    driveUrl: driveFile.getUrl(),
+    directDownloadUrl: "https://drive.google.com/uc?export=download&id=" + driveFile.getId()
+  };
+}
+
+function getOrCreateExportFolder() {
+  const folders = DriveApp.getFoldersByName(EXPORT_FOLDER_NAME);
+  if (folders.hasNext()) return folders.next();
+  return DriveApp.createFolder(EXPORT_FOLDER_NAME);
+}
+
+function createExcelExport(spreadsheet, options) {
+  const exportOptions = options || getExportOptions({});
+  if (isFilteredExport(exportOptions)) {
+    const records = filterRecordsForExport(collectRecords(spreadsheet), exportOptions);
+    const tempSpreadsheet = createFilteredExportSpreadsheet(spreadsheet, records, exportOptions);
+    try {
+      const exportFile = exportSpreadsheetBlob(tempSpreadsheet);
+      exportFile.count = records.length;
+      exportFile.periodStart = records.length ? records[0].gregorianDate : "";
+      exportFile.periodEnd = records.length ? records[records.length - 1].gregorianDate : "";
+      return exportFile;
+    } finally {
+      try {
+        DriveApp.getFileById(tempSpreadsheet.getId()).setTrashed(true);
+      } catch (error) {
+        // لا نوقف التصدير إذا تعذر حذف ملف التصدير المؤقت.
+      }
+    }
+  }
+
+  refreshDashboardSafely(spreadsheet, null, "تحديث قبل تصدير Excel");
+  const exportFile = exportSpreadsheetBlob(spreadsheet);
+  const records = collectRecords(spreadsheet);
+  exportFile.count = records.length;
+  exportFile.periodStart = records.length ? records[0].gregorianDate : "";
+  exportFile.periodEnd = records.length ? records[records.length - 1].gregorianDate : "";
+  return exportFile;
+}
+
+function exportSpreadsheetBlob(spreadsheet) {
+  SpreadsheetApp.flush();
+
+  const exportUrl = "https://docs.google.com/spreadsheets/d/" + spreadsheet.getId() + "/export?format=xlsx";
+  const response = UrlFetchApp.fetch(exportUrl, {
+    headers: {
+      Authorization: "Bearer " + ScriptApp.getOAuthToken()
+    },
+    muteHttpExceptions: true
+  });
+  const responseCode = response.getResponseCode();
+  if (responseCode < 200 || responseCode >= 300) {
+    throw new Error("تعذر تجهيز ملف Excel من Google Sheets. رمز الخطأ: " + responseCode);
+  }
+
+  const safeName = spreadsheet.getName().replace(/[\\/:*?"<>|]/g, "-") + "-" + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyyMMdd-HHmm") + ".xlsx";
+  return {
+    name: safeName,
+    blob: response.getBlob().setName(safeName),
+    count: "",
+    periodStart: "",
+    periodEnd: ""
+  };
+}
+
+function getExportOptions(params) {
+  const allTimeValue = Object.prototype.hasOwnProperty.call(params, "allTime")
+    ? String(params.allTime).toLowerCase()
+    : "";
+  const allTime = allTimeValue === "" ? true : allTimeValue === "true";
+  return {
+    allTime: allTime,
+    startDate: dateKey(params.startDate || ""),
+    endDate: dateKey(params.endDate || "")
+  };
+}
+
+function isFilteredExport(options) {
+  return options && !options.allTime && (options.startDate || options.endDate);
+}
+
+function filterRecordsForExport(records, options) {
+  const startDate = options.startDate || "";
+  const endDate = options.endDate || "";
+  return (records || []).filter((record) => {
+    const date = dateKey(record.gregorianDate || record.date || "");
+    if (!date) return false;
+    if (startDate && date < startDate) return false;
+    if (endDate && date > endDate) return false;
+    return true;
+  }).sort((a, b) => String(a.gregorianDate).localeCompare(String(b.gregorianDate)));
+}
+
+function createFilteredExportSpreadsheet(sourceSpreadsheet, records, options) {
+  const periodName = (options.startDate || "start") + "_to_" + (options.endDate || "end");
+  const tempSpreadsheet = SpreadsheetApp.create(sourceSpreadsheet.getName() + " - export - " + periodName);
+  const dataSheet = tempSpreadsheet.getSheets()[0];
+  dataSheet.setName("سجل التصدير");
+  dataSheet.clear();
+  dataSheet.getRange(1, 1, 1, HEADER.length).setValues([HEADER]);
+  dataSheet.setFrozenRows(1);
+  if (records.length) {
+    dataSheet.getRange(2, 1, records.length, HEADER.length).setValues(records.map(toRow));
+  }
+  try {
+    dataSheet.setRightToLeft(true);
+  } catch (error) {
+    // بعض الحسابات القديمة لا تدعم ضبط اتجاه الورقة عبر السكربت.
+  }
+  autoResize(dataSheet);
+  refreshDashboardSafely(tempSpreadsheet, records, "تصدير حسب النطاق المحدد");
+  return tempSpreadsheet;
+}
+
+function getSpreadsheetExportUrl() {
+  const spreadsheet = getSpreadsheet();
+  refreshDashboardSafely(spreadsheet, null, "تحديث قبل التصدير");
+  SpreadsheetApp.flush();
+  const id = spreadsheet.getId();
+  return {
+    ok: true,
+    name: spreadsheet.getName(),
+    exportUrl: "https://docs.google.com/spreadsheets/d/" + id + "/export?format=xlsx"
+  };
 }
 
 function getOrCreateMonthSheet(spreadsheet, sheetName) {
@@ -186,7 +699,7 @@ function deleteDailyRecords(dates) {
   });
 
   SpreadsheetApp.flush();
-  refreshDashboardSafely(spreadsheet);
+  refreshDashboardSafely(spreadsheet, null, "حذف سجلات");
   return { ok: true, deleted };
 }
 
@@ -205,14 +718,14 @@ function syncRecords(records) {
   });
 
   SpreadsheetApp.flush();
-  refreshDashboardSafely(spreadsheet);
+  refreshDashboardSafely(spreadsheet, null, "مزامنة سجلات");
   return { ok: true, synced: cleanRecords.length };
 }
 
 function getRecords() {
   const spreadsheet = getSpreadsheet();
   const records = collectRecords(spreadsheet);
-  refreshDashboardSafely(spreadsheet);
+  refreshDashboardSafely(spreadsheet, null, "قراءة السجلات");
   return { ok: true, records: records, count: records.length, version: SCRIPT_VERSION };
 }
 
@@ -233,10 +746,31 @@ function collectRecords(spreadsheet) {
   return records;
 }
 
+function normalizeDashboardRecord(record) {
+  if (!record) return null;
+  return toRecord(toRow(record));
+}
+
+function mergeRecordsForDashboard(records, forcedRecord) {
+  const byDate = {};
+  (records || []).forEach((record) => {
+    if (record && record.gregorianDate) {
+      byDate[record.gregorianDate] = record;
+    }
+  });
+  if (forcedRecord && forcedRecord.gregorianDate) {
+    byDate[forcedRecord.gregorianDate] = forcedRecord;
+  }
+  return Object.keys(byDate)
+    .sort()
+    .map((date) => byDate[date]);
+}
+
 function isDataSheet(sheet) {
   if (!sheet) return false;
   const name = String(sheet.getName() || "").trim();
   if (name === DASHBOARD_SHEET_NAME) return false;
+  if (name === SETTINGS_SHEET_NAME) return false;
   if (/^\d{4}-\d{2}$/.test(name)) return true;
   if (name.indexOf("2026-") === 0 || name.indexOf("2025-") === 0 || name.indexOf("2027-") === 0) return true;
   if (sheet.getLastRow() < 1 || sheet.getLastColumn() < 2) return false;
@@ -245,9 +779,9 @@ function isDataSheet(sheet) {
   return firstRow.includes("Gregorian Date") || firstRow.includes("Created At") || firstRow.includes("Total Visitors");
 }
 
-function refreshDashboardSafely(spreadsheet) {
+function refreshDashboardSafely(spreadsheet, recordsOverride, statusText) {
   try {
-    updateDashboard(spreadsheet);
+    updateDashboard(spreadsheet, recordsOverride, statusText);
     return { ok: true };
   } catch (error) {
     writeDashboardError(spreadsheet, error);
@@ -278,9 +812,9 @@ function writeDashboardError(spreadsheet, error) {
   }
 }
 
-function updateDashboard(spreadsheet) {
+function updateDashboard(spreadsheet, recordsOverride, statusText) {
   const sheet = getOrCreateDashboardSheet(spreadsheet);
-  const records = collectRecords(spreadsheet);
+  const records = Array.isArray(recordsOverride) ? recordsOverride : collectRecords(spreadsheet);
   const dataSheetNames = getDataSheetNames(spreadsheet);
   const summary = summarizeRecords(records);
   const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm");
@@ -310,7 +844,7 @@ function updateDashboard(spreadsheet) {
     .setFontColor("#14343b");
 
   sheet.getRange("A2:L2").merge()
-    .setValue("الفترة: " + periodText + "   |   آخر تحديث: " + now)
+    .setValue("الفترة: " + periodText + "   |   آخر تحديث: " + now + "   |   " + (statusText || "تحديث تلقائي"))
     .setHorizontalAlignment("center")
     .setFontSize(11)
     .setBackground("#f4f8f9")
@@ -562,6 +1096,7 @@ function clearManagedSheets(spreadsheet) {
 
 function isManagedSheet(sheet) {
   if (!sheet) return false;
+  if (String(sheet.getName() || "").trim() === SETTINGS_SHEET_NAME) return false;
   if (/^\d{4}-\d{2}$/.test(sheet.getName())) return true;
   if (sheet.getLastRow() < 1 || sheet.getLastColumn() < 2) return false;
   return String(sheet.getRange(1, 2).getValue()).trim() === "Gregorian Date";
