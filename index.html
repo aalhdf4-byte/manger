@@ -1745,7 +1745,8 @@
 
         const params = new URLSearchParams({
           action,
-          callback: callbackName
+          callback: callbackName,
+          _: String(Date.now())
         });
         Object.entries(payload).forEach(([key, value]) => {
           params.set(key, typeof value === "string" ? value : JSON.stringify(value));
@@ -1831,11 +1832,19 @@
       if (validateAppsScriptUrl(DEFAULT_APPS_SCRIPT_URL)) return;
       try {
         const result = await jsonpSheetAction("getRecords");
-        if (!result.ok || !Array.isArray(result.records)) return;
+        if (!result.ok || !Array.isArray(result.records)) {
+          showNotice(result.message ? `تعذر جلب سجل الأيام من Google Sheets: ${result.message}` : "تعذر جلب سجل الأيام من Google Sheets.", "warn");
+          return;
+        }
         const sheetRecords = result.records
           .map(normalizeSheetRecord)
           .filter(Boolean)
           .sort((a, b) => a.gregorianDate.localeCompare(b.gregorianDate));
+
+        if (!sheetRecords.length && records.length) {
+          showNotice("Google Sheets لم يرجع سجلات الآن، لذلك تم الإبقاء على السجلات الموجودة في هذا الجهاز.", "warn");
+          return;
+        }
 
         records = sheetRecords;
         saveRecordsToStorage();
@@ -1843,6 +1852,7 @@
         recalc();
       } catch (error) {
         console.warn("Unable to load records from Google Sheets", error);
+        showNotice(`تعذر جلب سجل الأيام من Google Sheets: ${error.message || "تحقق من نشر Apps Script."}`, "warn");
       }
     }
 
