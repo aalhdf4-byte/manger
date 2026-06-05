@@ -1666,7 +1666,12 @@
 
     function updateRecordsVisibility() {
       if (!el.recordsPanel || !el.recordsToggleBtn) return;
+      const body = el.recordsPanel.querySelector(".panel-body");
       el.recordsPanel.classList.toggle("collapsed", !recordsExpanded);
+      if (body) {
+        body.hidden = !recordsExpanded;
+        body.style.display = recordsExpanded ? "" : "none";
+      }
       el.recordsToggleBtn.textContent = recordsExpanded ? "إخفاء السجل" : "عرض السجل";
       el.recordsToggleBtn.setAttribute("aria-expanded", String(recordsExpanded));
     }
@@ -1675,6 +1680,11 @@
       recordsExpanded = !recordsExpanded;
       localStorage.setItem(STORAGE_KEYS.recordsExpanded, String(recordsExpanded));
       updateRecordsVisibility();
+      if (recordsExpanded) {
+        records = mergeRecords(records, loadRecords());
+        renderRecords();
+        loadRecordsFromSheet({ showStatus: true });
+      }
     }
 
     async function copyReport() {
@@ -1826,6 +1836,18 @@
       normalized.isMatched = normalized.totalVisitors === normalized.enteredTotal;
       normalized.reportText = normalized.reportText || buildReport(normalized);
       return normalized;
+    }
+
+    function mergeRecords(primaryRecords = [], fallbackRecords = []) {
+      const byDate = new Map();
+      [...fallbackRecords, ...primaryRecords].forEach((record) => {
+        const normalized = normalizeSheetRecord(record);
+        if (normalized && normalized.gregorianDate) {
+          byDate.set(normalized.gregorianDate, normalized);
+        }
+      });
+      return Array.from(byDate.values())
+        .sort((a, b) => a.gregorianDate.localeCompare(b.gregorianDate));
     }
 
     async function loadRecordsFromSheet() {
