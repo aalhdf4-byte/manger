@@ -376,6 +376,76 @@
     .match.good { color: var(--good); }
     .match.bad { color: var(--bad); }
 
+    .settlement-card {
+      display: none;
+      margin-top: 14px;
+      border: 1px solid #b8d8dd;
+      border-right: 7px solid var(--brand);
+      border-radius: 8px;
+      background: linear-gradient(135deg, #f4fbfc 0%, #ffffff 56%, #eef7f2 100%);
+      box-shadow: 0 10px 24px rgba(47, 124, 134, 0.10);
+      padding: 14px;
+    }
+
+    .settlement-card.show {
+      display: block;
+    }
+
+    .settlement-card h3 {
+      margin: 0 0 10px;
+      color: #14343b;
+      font-size: 18px;
+      line-height: 1.4;
+    }
+
+    .settlement-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .settlement-item {
+      border: 1px solid #d5e8ec;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+      padding: 10px;
+      min-height: 68px;
+    }
+
+    .settlement-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 7px;
+    }
+
+    .settlement-item strong {
+      display: block;
+      color: #10222a;
+      font-size: 17px;
+      line-height: 1.4;
+    }
+
+    .settlements-list-panel {
+      display: none;
+      margin-top: 18px;
+    }
+
+    .settlements-list-panel.show {
+      display: block;
+    }
+
+    .settlements-list-panel .panel-head {
+      background: linear-gradient(135deg, #f5fbfc 0%, #ffffff 100%);
+    }
+
+    .settlements-list-panel .status-badge {
+      background: #eef8f3;
+      color: #146b4d;
+      border-color: #bfe4d3;
+    }
+
     .report-box {
       min-height: 440px;
       font-size: 16px;
@@ -583,7 +653,8 @@
       }
 
       .form-grid,
-      .summary {
+      .summary,
+      .settlement-grid {
         grid-template-columns: 1fr;
       }
 
@@ -933,6 +1004,24 @@
             <span>مطابقة عدد الزوار</span>
             <span id="matchText">0 / 0</span>
           </div>
+
+          <div class="settlement-card" id="settlementCard" data-admin-only>
+            <h3 id="settlementCardTitle">تم استلام المبلغ</h3>
+            <div class="settlement-grid">
+              <div class="settlement-item">
+                <span>النطاق</span>
+                <strong id="settlementCardRange">-</strong>
+              </div>
+              <div class="settlement-item">
+                <span>المبلغ المستلم</span>
+                <strong id="settlementCardAmount">-</strong>
+              </div>
+              <div class="settlement-item">
+                <span>تاريخ الاستلام</span>
+                <strong id="settlementCardDate">-</strong>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -948,6 +1037,36 @@
         </div>
       </section>
     </div>
+
+    <section class="panel records collapsed settlements-list-panel" id="settlementsPanel" data-admin-only>
+      <div class="panel-head">
+        <div>
+          <h2>النطاقات المستلمة</h2>
+          <p id="settlementsCount">0 نطاق</p>
+        </div>
+        <div class="actions">
+          <button class="btn" id="settlementsToggleBtn" type="button">عرض النطاقات</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>النطاق</th>
+                <th>المبلغ المستلم</th>
+                <th>المبلغ المتوقع</th>
+                <th>تاريخ الاستلام</th>
+                <th>عدد السجلات</th>
+              </tr>
+            </thead>
+            <tbody id="settlementsBody">
+              <tr><td class="empty" colspan="5">لا توجد نطاقات مستلمة حتى الآن</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
 
     <section class="panel records collapsed" id="recordsPanel">
       <div class="panel-head">
@@ -1015,14 +1134,15 @@
       pendingEdits: "simple_pool_pending_edits_v1",
       pendingDeletes: "simple_pool_pending_deletes_v1",
       settlements: "simple_pool_settlements_v1",
-      recordsExpanded: "simple_pool_records_expanded_v1"
+      recordsExpanded: "simple_pool_records_expanded_v1",
+      settlementsExpanded: "simple_pool_settlements_expanded_v1"
     };
     const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtml_pV0yRxYRULTd1tLyIA2YRzalArShe_j4Nz2OHQ5pFW6Ijpt3R01cG1AyFddnO-Q/exec";
 
     const arabicDays = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
     const ids = [
       "settingsPanel", "settingsBtn", "saveSettingsBtn", "saveBtn", "copyBtn", "exportBtn", "deleteSelectedBtn", "settleRangeBtn",
-      "recordsPanel", "recordsToggleBtn",
+      "recordsPanel", "recordsToggleBtn", "settlementsPanel", "settlementsToggleBtn",
       "editActionStatus", "recordsActionStatus", "settlementSummary",
       "loginOverlay", "loginUsername", "loginPassword", "loginBtn",
       "exportAllTime", "exportStartDate", "exportEndDate", "settlementAmount",
@@ -1036,7 +1156,8 @@
       "subscriberEnabled", "subscriberSection",
       "subscriberCash", "subscriberBank", "subscriberSplitCount", "subscriberSplitCash", "subscriberSplitBank", "subscriberNames", "subscriberNamesList",
       "notes", "enteredTotal", "cashAmount", "bankAmount", "grandAmount", "matchBox", "matchText",
-      "reportText", "recordsBody", "recordCount", "pendingEditsBody", "pendingCount", "pendingDeletesBody", "pendingDeleteCount", "notice"
+      "settlementCard", "settlementCardTitle", "settlementCardRange", "settlementCardAmount", "settlementCardDate",
+      "reportText", "recordsBody", "recordCount", "settlementsBody", "settlementsCount", "pendingEditsBody", "pendingCount", "pendingDeletesBody", "pendingDeleteCount", "notice"
     ];
     const el = {};
     ids.forEach((id) => el[id] = document.getElementById(id));
@@ -1049,6 +1170,7 @@
     let editingDate = null;
     let isLoadingRecord = false;
     let recordsExpanded = localStorage.getItem(STORAGE_KEYS.recordsExpanded) === "true";
+    let settlementsExpanded = localStorage.getItem(STORAGE_KEYS.settlementsExpanded) === "true";
 
     function todayISO() {
       const now = new Date();
@@ -1332,6 +1454,9 @@
         if ("disabled" in node) node.disabled = !admin;
       });
       updateExportRangeState();
+      renderSettlementCard();
+      renderSettlementsList();
+      updateSettlementsVisibility();
     }
 
     async function login() {
@@ -1747,6 +1872,30 @@
       }
     }
 
+    function updateSettlementsVisibility() {
+      if (!el.settlementsPanel || !el.settlementsToggleBtn) return;
+      const body = el.settlementsPanel.querySelector(".panel-body");
+      const admin = isAdminLoggedIn();
+      el.settlementsPanel.classList.toggle("show", admin);
+      el.settlementsPanel.classList.toggle("collapsed", !settlementsExpanded);
+      if (body) {
+        body.hidden = !settlementsExpanded;
+        body.style.display = settlementsExpanded ? "" : "none";
+      }
+      el.settlementsToggleBtn.textContent = settlementsExpanded ? "إخفاء النطاقات" : "عرض النطاقات";
+      el.settlementsToggleBtn.setAttribute("aria-expanded", String(settlementsExpanded));
+    }
+
+    function toggleSettlementsVisibility() {
+      settlementsExpanded = !settlementsExpanded;
+      localStorage.setItem(STORAGE_KEYS.settlementsExpanded, String(settlementsExpanded));
+      updateSettlementsVisibility();
+      if (settlementsExpanded) {
+        renderSettlementsList();
+        loadSettlementsFromSheet({ showStatus: true });
+      }
+    }
+
     async function copyReport() {
       const text = el.reportText.value;
       try {
@@ -1965,6 +2114,61 @@
         .find((settlement) => key >= settlement.startDate && key <= settlement.endDate) || null;
     }
 
+    function latestSettlement() {
+      return settlements
+        .map(normalizeSettlement)
+        .filter(Boolean)
+        .sort((a, b) => String(a.settledAt || "").localeCompare(String(b.settledAt || "")))
+        .slice(-1)[0] || null;
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "-";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return String(value);
+      return date.toLocaleString("ar-SA", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function renderSettlementCard() {
+      if (!el.settlementCard) return;
+      const settlement = latestSettlement();
+      const show = Boolean(settlement && isAdminLoggedIn());
+      el.settlementCard.classList.toggle("show", show);
+      if (!settlement) return;
+      el.settlementCardTitle.textContent = "تم استلام المبلغ";
+      el.settlementCardRange.textContent = `${settlement.startDate} إلى ${settlement.endDate}`;
+      el.settlementCardAmount.textContent = money(settlement.receivedAmount);
+      el.settlementCardDate.textContent = formatDateTime(settlement.settledAt);
+    }
+
+    function renderSettlementsList() {
+      if (!el.settlementsBody || !el.settlementsCount) return;
+      const normalized = settlements
+        .map(normalizeSettlement)
+        .filter(Boolean)
+        .sort((a, b) => String(b.settledAt || "").localeCompare(String(a.settledAt || "")));
+      el.settlementsCount.textContent = `${numText(normalized.length)} نطاق`;
+      if (!normalized.length) {
+        el.settlementsBody.innerHTML = `<tr><td class="empty" colspan="5">لا توجد نطاقات مستلمة حتى الآن</td></tr>`;
+        return;
+      }
+      el.settlementsBody.innerHTML = normalized.map((settlement) => `
+        <tr>
+          <td><span class="status-badge">${escapeHtml(settlement.startDate)} إلى ${escapeHtml(settlement.endDate)}</span></td>
+          <td>${money(settlement.receivedAmount)}</td>
+          <td>${money(settlement.expectedAmount)}</td>
+          <td>${escapeHtml(formatDateTime(settlement.settledAt))}</td>
+          <td>${numText(settlement.recordCount)}</td>
+        </tr>
+      `).join("");
+    }
+
     async function loadSettlementsFromSheet(options = {}) {
       if (validateAppsScriptUrl(DEFAULT_APPS_SCRIPT_URL)) return;
       try {
@@ -1973,6 +2177,8 @@
         settlements = result.settlements.map(normalizeSettlement).filter(Boolean);
         saveSettlementsToStorage();
         renderRecords();
+        renderSettlementCard();
+        renderSettlementsList();
       } catch (error) {
         console.warn("Unable to load settlements from Google Sheets", error);
         if (options.showStatus) {
@@ -2046,7 +2252,10 @@
         settlements.push(savedSettlement);
         saveSettlementsToStorage();
         renderRecords();
+        renderSettlementCard();
+        renderSettlementsList();
         showActionStatus(el.settlementSummary, `تم اعتماد استلام النطاق من ${range.startDate} إلى ${range.endDate}. المتوقع ${money(summary.grandAmount)}، والمستلم ${money(receivedAmount)}.`);
+        refreshDashboardAfterSave();
       } catch (error) {
         showActionStatus(el.settlementSummary, `تعذر حفظ علامة الاستلام في Google Sheets: ${error.message || "تحقق من نشر Apps Script."}`);
       }
@@ -2560,7 +2769,10 @@
       return `<row r="${rowNumber}"${heightAttrs}>${cells.join("")}</row>`;
     }
 
-    function dashboardSheetXml(summary, periodStart, periodEnd) {
+    function dashboardSheetXml(summary, periodStart, periodEnd, settlement) {
+      const settlementText = settlement
+        ? `تم استلام المبلغ | النطاق: ${settlement.startDate} إلى ${settlement.endDate} | المبلغ المستلم: ${money(settlement.receivedAmount)} | تاريخ الاستلام: ${formatDateTime(settlement.settledAt)}`
+        : "حالة الاستلام: لا يوجد نطاق مستلم حتى الآن";
       const rows = [
         xlsxRow(1, [xlsxCell(1, 1, "داش بورد تقرير المسبح", 1)], 34),
         xlsxRow(3, [
@@ -2576,6 +2788,7 @@
         xlsxRow(9, [xlsxCell(9, 1, "إجمالي الكاش لكل الفئات", 0), xlsxCell(9, 2, summary.cashAmount, 3, "number"), xlsxCell(9, 4, "إجمالي التحويل لكل الفئات", 0), xlsxCell(9, 5, summary.bankAmount, 3, "number")]),
         xlsxRow(10, [xlsxCell(10, 1, "كاش الدفع الجزئي", 0), xlsxCell(10, 2, summary.splitCash, 3, "number"), xlsxCell(10, 4, "تحويل الدفع الجزئي", 0), xlsxCell(10, 5, summary.splitBank, 3, "number")]),
         xlsxRow(11, [xlsxCell(11, 1, "إجمالي المبالغ", 0), xlsxCell(11, 2, summary.grandAmount, 3, "number"), xlsxCell(11, 4, "حالة المطابقة", 0), xlsxCell(11, 5, summary.totalVisitors === summary.enteredTotal ? "مطابق" : "يوجد اختلاف", 3)]),
+        xlsxRow(12, [xlsxCell(12, 1, settlementText, 2)], 32),
         xlsxRow(13, [xlsxCell(13, 1, "الفئة", 2), xlsxCell(13, 2, "العدد", 2), xlsxCell(13, 4, "الفئة", 2), xlsxCell(13, 5, "الكاش", 2), xlsxCell(13, 6, "التحويل البنكي", 2), xlsxCell(13, 7, "الإجمالي", 2)], 24),
         xlsxRow(14, [xlsxCell(14, 1, "الزوار", 0), xlsxCell(14, 2, summary.visitors, 0, "number"), xlsxCell(14, 4, "الزوار", 0), xlsxCell(14, 5, summary.visitorsCashAmount, 0, "number"), xlsxCell(14, 6, summary.visitorsBankAmount, 0, "number"), xlsxCell(14, 7, summary.visitorsCashAmount + summary.visitorsBankAmount, 0, "number")]),
         xlsxRow(15, [xlsxCell(15, 1, "أبناء الأكاديمية", 0), xlsxCell(15, 2, summary.academy, 0, "number"), xlsxCell(15, 4, "أبناء الأكاديمية", 0), xlsxCell(15, 5, summary.academyCashAmount, 0, "number"), xlsxCell(15, 6, summary.academyBankAmount, 0, "number"), xlsxCell(15, 7, summary.academyCashAmount + summary.academyBankAmount, 0, "number")]),
@@ -2597,7 +2810,7 @@
             <col min="8" max="8" width="5" customWidth="1"/>
           </cols>
           <sheetData>${rows.join("")}</sheetData>
-          <mergeCells count="1"><mergeCell ref="A1:H1"/></mergeCells>
+          <mergeCells count="2"><mergeCell ref="A1:H1"/><mergeCell ref="A12:H12"/></mergeCells>
           <drawing r:id="rId1"/>
         </worksheet>`;
     }
@@ -2960,7 +3173,7 @@
         { name: "xl/workbook.xml", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets><sheet name="Dashboard" sheetId="1" r:id="rId1"/><sheet name="سجل الأيام" sheetId="2" r:id="rId2"/></sheets></workbook>` },
         { name: "xl/_rels/workbook.xml.rels", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
         { name: "xl/styles.xml", content: xlsxStylesXml() },
-        { name: "xl/worksheets/sheet1.xml", content: dashboardSheetXml(summary, periodStart, periodEnd) },
+        { name: "xl/worksheets/sheet1.xml", content: dashboardSheetXml(summary, periodStart, periodEnd, latestSettlement()) },
         { name: "xl/worksheets/sheet2.xml", content: recordsSheetXml(sortedRecords) },
         { name: "xl/worksheets/_rels/sheet1.xml.rels", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>` },
         { name: "xl/drawings/drawing1.xml", content: xlsxDrawingXml() },
@@ -3007,6 +3220,7 @@
       el.copyBtn.addEventListener("click", copyReport);
       el.saveBtn.addEventListener("click", saveDay);
       el.recordsToggleBtn.addEventListener("click", toggleRecordsVisibility);
+      el.settlementsToggleBtn.addEventListener("click", toggleSettlementsVisibility);
       el.academyEnabled.addEventListener("change", () => {
         updateOptionalSections();
         recalc();
@@ -3055,6 +3269,9 @@
       renderPendingEdits();
       renderPendingDeletes();
       updateRecordsVisibility();
+      renderSettlementCard();
+      renderSettlementsList();
+      updateSettlementsVisibility();
       recalc();
       loadSharedSettings().then((loaded) => {
         if (loaded) {
