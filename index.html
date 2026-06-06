@@ -500,6 +500,27 @@
       display: none !important;
     }
 
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 30px;
+      border-radius: 8px;
+      padding: 4px 9px;
+      border: 1px solid #bfe5cb;
+      background: #eef8f1;
+      color: var(--good);
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .status-badge.muted {
+      border-color: var(--line);
+      background: #f7fafc;
+      color: var(--muted);
+    }
+
     table {
       width: 100%;
       min-width: 760px;
@@ -948,8 +969,14 @@
             <label for="exportEndDate">إلى</label>
             <input id="exportEndDate" type="date" disabled>
           </div>
+          <div class="field" style="min-width:150px" data-admin-only>
+            <label for="settlementAmount">المبلغ المستلم</label>
+            <input id="settlementAmount" type="number" min="0" step="1" placeholder="0">
+          </div>
           <button class="btn" id="exportBtn" type="button" data-admin-only>تصدير حسب النطاق</button>
+          <button class="btn primary" id="settleRangeBtn" type="button" data-admin-only>اعتماد استلام النطاق</button>
           <button class="btn danger" id="deleteSelectedBtn" type="button">طلب حذف المحدد</button>
+          <div class="action-status" id="settlementSummary" role="status" data-admin-only></div>
           <div class="action-status" id="recordsActionStatus" role="status"></div>
         </div>
       </div>
@@ -968,11 +995,12 @@
                 <th>مشتركين الزوار</th>
                 <th>الكاش</th>
                 <th>التحويل</th>
+                <th>الاستلام</th>
                 <th>الإجراء</th>
               </tr>
             </thead>
             <tbody id="recordsBody">
-              <tr><td class="empty" colspan="11">لا توجد بيانات محفوظة حتى الآن</td></tr>
+              <tr><td class="empty" colspan="12">لا توجد بيانات محفوظة حتى الآن</td></tr>
             </tbody>
           </table>
         </div>
@@ -986,17 +1014,18 @@
       records: "simple_pool_records_v1",
       pendingEdits: "simple_pool_pending_edits_v1",
       pendingDeletes: "simple_pool_pending_deletes_v1",
+      settlements: "simple_pool_settlements_v1",
       recordsExpanded: "simple_pool_records_expanded_v1"
     };
     const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtml_pV0yRxYRULTd1tLyIA2YRzalArShe_j4Nz2OHQ5pFW6Ijpt3R01cG1AyFddnO-Q/exec";
 
     const arabicDays = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
     const ids = [
-      "settingsPanel", "settingsBtn", "saveSettingsBtn", "saveBtn", "copyBtn", "exportBtn", "deleteSelectedBtn",
+      "settingsPanel", "settingsBtn", "saveSettingsBtn", "saveBtn", "copyBtn", "exportBtn", "deleteSelectedBtn", "settleRangeBtn",
       "recordsPanel", "recordsToggleBtn",
-      "editActionStatus", "recordsActionStatus",
+      "editActionStatus", "recordsActionStatus", "settlementSummary",
       "loginOverlay", "loginUsername", "loginPassword", "loginBtn",
-      "exportAllTime", "exportStartDate", "exportEndDate",
+      "exportAllTime", "exportStartDate", "exportEndDate", "settlementAmount",
       "visitorPrice", "academyPrice", "subscriberPrice", "coachName", "scriptUrl",
       "coachUsername", "coachPassword", "adminUsername", "adminPassword", "requireLogin",
       "visitorPriceLabel", "academyPriceLabel", "subscriberPriceLabel",
@@ -1016,6 +1045,7 @@
     let records = loadRecords();
     let pendingEdits = loadPendingEdits();
     let pendingDeletes = loadPendingDeletes();
+    let settlements = loadSettlements();
     let editingDate = null;
     let isLoadingRecord = false;
     let recordsExpanded = localStorage.getItem(STORAGE_KEYS.recordsExpanded) === "true";
@@ -1094,6 +1124,14 @@
       }
     }
 
+    function loadSettlements() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.settlements) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
     function saveSettingsToStorage() {
       localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(settings));
     }
@@ -1108,6 +1146,10 @@
 
     function savePendingDeletesToStorage() {
       localStorage.setItem(STORAGE_KEYS.pendingDeletes, JSON.stringify(pendingDeletes));
+    }
+
+    function saveSettlementsToStorage() {
+      localStorage.setItem(STORAGE_KEYS.settlements, JSON.stringify(settlements));
     }
 
     function sharedSettingsPayload(sourceSettings = settings) {
@@ -1289,6 +1331,7 @@
         node.classList.toggle("hidden", !admin);
         if ("disabled" in node) node.disabled = !admin;
       });
+      updateExportRangeState();
     }
 
     async function login() {
@@ -1700,6 +1743,7 @@
         records = mergeRecords(records, loadRecords());
         renderRecords();
         loadRecordsFromSheet({ showStatus: true });
+        loadSettlementsFromSheet({ showStatus: true });
       }
     }
 
@@ -1894,6 +1938,120 @@
       }
     }
 
+    function normalizeSettlement(item) {
+      if (!item) return null;
+      const startDate = String(item.startDate || "").slice(0, 10);
+      const endDate = String(item.endDate || "").slice(0, 10);
+      if (!startDate || !endDate) return null;
+      return {
+        id: item.id || `${startDate}_${endDate}`,
+        startDate,
+        endDate,
+        receivedAmount: Number(item.receivedAmount || 0),
+        expectedAmount: Number(item.expectedAmount || 0),
+        recordCount: Number(item.recordCount || 0),
+        settledAt: item.settledAt || "",
+        note: item.note || ""
+      };
+    }
+
+    function findSettlementForDate(date) {
+      const key = String(date || "").slice(0, 10);
+      if (!key) return null;
+      return settlements
+        .map(normalizeSettlement)
+        .filter(Boolean)
+        .reverse()
+        .find((settlement) => key >= settlement.startDate && key <= settlement.endDate) || null;
+    }
+
+    async function loadSettlementsFromSheet(options = {}) {
+      if (validateAppsScriptUrl(DEFAULT_APPS_SCRIPT_URL)) return;
+      try {
+        const result = await jsonpSheetAction("getSettlements");
+        if (!result.ok || !Array.isArray(result.settlements)) return;
+        settlements = result.settlements.map(normalizeSettlement).filter(Boolean);
+        saveSettlementsToStorage();
+        renderRecords();
+      } catch (error) {
+        console.warn("Unable to load settlements from Google Sheets", error);
+        if (options.showStatus) {
+          showActionStatus(el.settlementSummary, "تعذر جلب علامات الاستلام من Google Sheets.");
+        }
+      }
+    }
+
+    function currentExportRange() {
+      if (el.exportAllTime.checked) {
+        showActionStatus(el.settlementSummary, "اعتماد الاستلام يحتاج تحديد تاريخ البداية والنهاية، وليس جميع الأوقات.");
+        return null;
+      }
+
+      const startDate = el.exportStartDate.value;
+      const endDate = el.exportEndDate.value;
+      if (!startDate || !endDate) {
+        showActionStatus(el.settlementSummary, "حدد تاريخ البداية والنهاية قبل اعتماد الاستلام.");
+        return null;
+      }
+      if (startDate > endDate) {
+        showActionStatus(el.settlementSummary, "تاريخ البداية يجب أن يكون قبل تاريخ النهاية.");
+        return null;
+      }
+      return { startDate, endDate };
+    }
+
+    async function settleCurrentRange() {
+      if (!isAdminLoggedIn()) {
+        showNotice("اعتماد استلام النطاق متاح للإدارة فقط.", "warn");
+        return;
+      }
+
+      clearActionStatus(el.settlementSummary);
+      const range = currentExportRange();
+      if (!range) return;
+
+      const rangeRecords = records.filter((record) => {
+        const date = record.gregorianDate || "";
+        return date >= range.startDate && date <= range.endDate;
+      });
+      if (!rangeRecords.length) {
+        showActionStatus(el.settlementSummary, "لا توجد سجلات داخل هذا النطاق لاعتماد استلامها.");
+        return;
+      }
+
+      const receivedAmount = numberValue(el.settlementAmount.value);
+      if (!receivedAmount) {
+        showActionStatus(el.settlementSummary, "أدخل المبلغ الذي سلّمه الكوتش قبل اعتماد الاستلام.");
+        el.settlementAmount.focus();
+        return;
+      }
+
+      const summary = summarizeRecords(rangeRecords);
+      const settlement = {
+        id: `${range.startDate}_${range.endDate}`,
+        startDate: range.startDate,
+        endDate: range.endDate,
+        receivedAmount,
+        expectedAmount: summary.grandAmount,
+        recordCount: rangeRecords.length,
+        settledAt: new Date().toISOString(),
+        note: ""
+      };
+
+      try {
+        const result = await jsonpSheetAction("saveSettlement", { settlement });
+        if (!result.ok) throw new Error(result.message || "settlement-save-failed");
+        const savedSettlement = normalizeSettlement(result.settlement || settlement);
+        settlements = settlements.filter((item) => !(item.startDate === savedSettlement.startDate && item.endDate === savedSettlement.endDate));
+        settlements.push(savedSettlement);
+        saveSettlementsToStorage();
+        renderRecords();
+        showActionStatus(el.settlementSummary, `تم اعتماد استلام النطاق من ${range.startDate} إلى ${range.endDate}. المتوقع ${money(summary.grandAmount)}، والمستلم ${money(receivedAmount)}.`);
+      } catch (error) {
+        showActionStatus(el.settlementSummary, `تعذر حفظ علامة الاستلام في Google Sheets: ${error.message || "تحقق من نشر Apps Script."}`);
+      }
+    }
+
     async function refreshDashboardAfterSave() {
       if (validateAppsScriptUrl(DEFAULT_APPS_SCRIPT_URL)) return;
       try {
@@ -1954,7 +2112,7 @@
     function renderRecords() {
       el.recordCount.textContent = `${records.length} سجل`;
       if (!records.length) {
-        el.recordsBody.innerHTML = `<tr><td class="empty" colspan="11">لا توجد بيانات محفوظة حتى الآن</td></tr>`;
+        el.recordsBody.innerHTML = `<tr><td class="empty" colspan="12">لا توجد بيانات محفوظة حتى الآن</td></tr>`;
         return;
       }
 
@@ -1965,6 +2123,10 @@
         const visitorTotal = categoryTotal(visitors);
         const academyTotal = categoryTotal(academy);
         const subscriberTotal = categoryTotal(subscribers);
+        const settlement = findSettlementForDate(record.gregorianDate);
+        const settlementLabel = settlement
+          ? `<span class="status-badge" title="النطاق: ${escapeHtml(settlement.startDate)} إلى ${escapeHtml(settlement.endDate)} - المستلم: ${money(settlement.receivedAmount)}">تم الاستلام</span>`
+          : `<span class="status-badge muted">لم يستلم</span>`;
         return `
           <tr>
             <td class="select-cell"><input type="checkbox" data-select-record value="${escapeHtml(record.gregorianDate)}" aria-label="اختيار سجل ${escapeHtml(record.gregorianDate)}"></td>
@@ -1977,6 +2139,7 @@
             <td>${numText(subscriberTotal)}</td>
             <td>${money(record.cashAmount)}</td>
             <td>${money(record.bankAmount)}</td>
+            <td>${settlementLabel}</td>
             <td><button class="btn" type="button" data-edit-date="${escapeHtml(record.gregorianDate)}">تحرير</button></td>
           </tr>
         `;
@@ -2693,6 +2856,8 @@
       const disabled = el.exportAllTime.checked;
       el.exportStartDate.disabled = disabled;
       el.exportEndDate.disabled = disabled;
+      el.settlementAmount.disabled = disabled || !isAdminLoggedIn();
+      el.settleRangeBtn.disabled = disabled || !isAdminLoggedIn();
     }
 
     async function exportGoogleSheetXlsx() {
@@ -2851,6 +3016,7 @@
         recalc();
       });
       el.exportBtn.addEventListener("click", exportGoogleSheetXlsx);
+      el.settleRangeBtn.addEventListener("click", settleCurrentRange);
       el.exportAllTime.addEventListener("change", updateExportRangeState);
       el.deleteSelectedBtn.addEventListener("click", requestDeleteSelected);
       el.recordsBody.addEventListener("click", (event) => {
@@ -2897,7 +3063,9 @@
         }
       });
       loadRecordsFromSheet();
+      loadSettlementsFromSheet();
       window.setInterval(loadRecordsFromSheet, 15000);
+      window.setInterval(loadSettlementsFromSheet, 30000);
     }
 
     init();
