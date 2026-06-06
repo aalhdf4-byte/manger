@@ -984,7 +984,7 @@
       pendingDeletes: "simple_pool_pending_deletes_v1",
       recordsExpanded: "simple_pool_records_expanded_v1"
     };
-    const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybBwZoXi7qWSyxw_oEnLHvJIHPg1nkCh7Fxo2v6q7JdNh14G4OnZGlYW6Kp-Tv-BPlLQ/exec";
+    const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtml_pV0yRxYRULTd1tLyIA2YRzalArShe_j4Nz2OHQ5pFW6Ijpt3R01cG1AyFddnO-Q/exec";
 
     const arabicDays = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
     const ids = [
@@ -1156,14 +1156,15 @@
     }
 
     async function saveSharedSettings(nextSettings = settings) {
-      const ping = await jsonpSharedSettingsAction("ping");
+      const targetUrl = normalizeSavedScriptUrl(nextSettings.scriptUrl || settings.scriptUrl, DEFAULT_APPS_SCRIPT_URL);
+      const ping = await jsonpSharedSettingsAction("ping", {}, targetUrl);
       const features = Array.isArray(ping.features) ? ping.features : [];
       if (!features.includes("saveAppSettings")) {
         throw new Error("Apps Script الحالي قديم ولا يدعم حفظ بيانات الدخول المركزية.");
       }
       const result = await jsonpSharedSettingsAction("saveAppSettings", {
         settings: sharedSettingsPayload(nextSettings)
-      });
+      }, targetUrl);
       if (!result.ok) {
         throw new Error(result.message || "shared-settings-save-failed");
       }
@@ -1208,7 +1209,7 @@
         academyPrice: numberValue(el.academyPrice.value),
         subscriberPrice: numberValue(el.subscriberPrice.value),
         coachName: el.coachName.value.trim() || "رجب",
-        scriptUrl: DEFAULT_APPS_SCRIPT_URL,
+        scriptUrl,
         coachUsername: el.coachUsername.value.trim() || "coach",
         coachPassword: el.coachPassword.value || "1234",
         adminUsername: el.adminUsername.value.trim() || "admin",
@@ -1725,8 +1726,8 @@
       return jsonpActionUrl(DEFAULT_APPS_SCRIPT_URL, action, payload);
     }
 
-    function jsonpSharedSettingsAction(action, payload = {}) {
-      return jsonpActionUrl(DEFAULT_APPS_SCRIPT_URL, action, payload);
+    function jsonpSharedSettingsAction(action, payload = {}, url = DEFAULT_APPS_SCRIPT_URL) {
+      return jsonpActionUrl(normalizeSavedScriptUrl(url, DEFAULT_APPS_SCRIPT_URL), action, payload);
     }
 
     function jsonpActionUrl(url, action, payload = {}) {
