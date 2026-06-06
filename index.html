@@ -496,6 +496,10 @@
       display: none;
     }
 
+    [data-admin-only].hidden {
+      display: none !important;
+    }
+
     table {
       width: 100%;
       min-width: 760px;
@@ -932,19 +936,19 @@
         </div>
         <div class="actions">
           <button class="btn" id="recordsToggleBtn" type="button">عرض السجل</button>
-          <label class="switch-row" style="min-height:42px">
+          <label class="switch-row" style="min-height:42px" data-admin-only>
             <input id="exportAllTime" type="checkbox" checked>
             جميع الأوقات
           </label>
-          <div class="field" style="min-width:150px">
+          <div class="field" style="min-width:150px" data-admin-only>
             <label for="exportStartDate">من</label>
             <input id="exportStartDate" type="date" disabled>
           </div>
-          <div class="field" style="min-width:150px">
+          <div class="field" style="min-width:150px" data-admin-only>
             <label for="exportEndDate">إلى</label>
             <input id="exportEndDate" type="date" disabled>
           </div>
-          <button class="btn" id="exportBtn" type="button">تصدير حسب النطاق</button>
+          <button class="btn" id="exportBtn" type="button" data-admin-only>تصدير حسب النطاق</button>
           <button class="btn danger" id="deleteSelectedBtn" type="button">طلب حذف المحدد</button>
           <div class="action-status" id="recordsActionStatus" role="status"></div>
         </div>
@@ -1276,6 +1280,15 @@
       } else {
         el.loginOverlay.classList.remove("show");
       }
+      updateRoleControls();
+    }
+
+    function updateRoleControls() {
+      const admin = isAdminLoggedIn();
+      document.querySelectorAll("[data-admin-only]").forEach((node) => {
+        node.classList.toggle("hidden", !admin);
+        if ("disabled" in node) node.disabled = !admin;
+      });
     }
 
     async function login() {
@@ -1294,6 +1307,7 @@
 
       if (adminMatched) {
         sessionStorage.setItem("pool_user_role", "admin");
+        updateRoleControls();
         el.loginOverlay.classList.remove("show");
         el.settingsPanel.classList.add("show");
         el.loginUsername.value = "";
@@ -1304,6 +1318,7 @@
       }
       if (coachMatched) {
         sessionStorage.setItem("pool_user_role", "coach");
+        updateRoleControls();
         el.loginOverlay.classList.remove("show");
         el.settingsPanel.classList.remove("show");
         el.loginUsername.value = "";
@@ -2681,6 +2696,11 @@
     }
 
     async function exportGoogleSheetXlsx() {
+      if (!isAdminLoggedIn()) {
+        showNotice("التصدير حسب النطاق متاح للإدارة فقط.", "warn");
+        return;
+      }
+
       if (validateAppsScriptUrl(DEFAULT_APPS_SCRIPT_URL)) {
         showNotice("تعذر تجهيز رابط Google Apps Script المركزي.", "warn");
         return;
